@@ -337,7 +337,7 @@
 </head>
 <body>
   <div class="menus">
-        <div class="alignRight"><a href="../index.html">TITLE</a>  <a href="#" onclick="resetGame();">RESET</a>  <a href="#" id="musicToggle">Toggle Music</a> <a href="#" onclick="openControl('mobile-controls');">Touch Mode</a></div>
+        <div class="alignLeft"><a href="../index.html">TITLE</a> <a href="#" onclick="resetGame();">RESET</a> <a href="#" id="musicToggle">DISABLE MUSIC</a> <a href="#" onclick="openControl('mobile-controls');">TOUCH MODE</a></div>
 
         <p></p>
         <p><span class="player">↑</span> Player: It's you!</p>
@@ -875,7 +875,7 @@
 
                 attempts++;
                 if (attempts > 100) {
-                    console.error("Failed to generate merchant items after 100 attempts!");
+                    console.error(`Failed to generate merchant items after ${attempts} attempts!`);
                     break;
                 }
             } while (merchant.items.length === 0);
@@ -2106,7 +2106,7 @@ __\\_______^/
         document.getElementById('musicToggle').addEventListener('click', () => {
             musicEnabled = !musicEnabled;
             const btn = document.getElementById('musicToggle');
-            btn.textContent = musicEnabled ? "Toggle Music" : "Toggle Music";
+            btn.textContent = musicEnabled ? "DISABLE MUSIC" : "ENABLE MUSIC";
 
             if (!musicEnabled) {
                 // Pause the current music
