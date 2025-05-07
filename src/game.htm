@@ -386,14 +386,14 @@
         <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
         <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
         <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Use Item</button>
+        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
       </div>
       <div id="merchant-controls" style="visibility: hidden;">
         <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
         <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
         <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
         <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Buy</button>
+        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
       </div>
       <div id="gambler-controls" style="visibility: hidden;">
         <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
@@ -420,11 +420,15 @@
 
     function openControl(getID)
     {
-	    document.getElementById(getID).style.visibility = "visible";
+        const element = document.getElementById(getID);
+        if (!element) return; // Ignore if the element ID is null
+        element.style.visibility = "visible";
     }
     function closeControl(getID)
     {
-	    document.getElementById(getID).style.visibility = "hidden";
+        const element = document.getElementById(getID);
+        if (!element) return; // Ignore if the element ID is null
+        element.style.visibility = "hidden";
     }
     // End custom functions
         const
