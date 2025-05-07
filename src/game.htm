@@ -1526,8 +1526,6 @@ __\\_______^/
 
             const tile = getTile(nx, ny);
             if (tile !== '#') {
-                const proceed = window.modifyTileInteraction?.(tile, nx, ny, randomEncounterChance);
-                if (proceed === false) return;
                 player.x = nx;
                 player.y = ny;
                 if (isMerchantTile(nx, ny)) {
