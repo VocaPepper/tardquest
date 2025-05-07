@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>TARDQUEST</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=0.6, maximum-scale=0.6, user-scalable=no">
+
+    <!-- Load CSS Patches -->
+    <link rel="stylesheet" href="patches/ui.css">
+
     <style>
         /* ===== Scrollbar CSS ===== */
         /* Firefox */
@@ -289,9 +295,9 @@
 </head>
 <body>
   <div class="menus">
-        <a href="https://xxthemilkman69xx.neocities.org/dungeon/title.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">Toggle Music</a>
+        <div class="alignRight"><a href="index.html">TITLE</a>  <a href="#" onclick="resetGame();">RESET</a>  <a href="#" id="musicToggle">Toggle Music</a> <a href="#" onclick="openControl('mobile-controls');">Touch Mode</a></div>
 
-        <p><strong>KEY</strong></p>
+        <p></p>
         <p><span class="player">↑</span> Player: It's you!</p>
         <p><span class="wall">#</span> Wall: It's a fucking wall</p>
         <p><span class="exit">E</span> Exit: Touch to descend further</p>
@@ -320,9 +326,63 @@
         <input type="text" id="persuadeInput" placeholder="Say your piece...">
       </div>
     </div>
+
+<!-- Mobile Control Patches-->
+<div id="mobile-controls" style="visibility: hidden;">
+    <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+    <button class="button" onclick="closeControl('mobile-controls')" style="position:absolute; top: -2px; right:-2px;">X</button>
+    <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+    <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+    <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+    <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
+    <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
+    <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
+    <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
+    <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
+    <div id="inventory-controls" style="visibility: hidden;">
+        <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+        <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+        <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+        <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Use Item</button>
+      </div>
+      <div id="merchant-controls" style="visibility: hidden;">
+        <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+        <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+        <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+        <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Buy</button>
+      </div>
+      <div id="gambler-controls" style="visibility: hidden;">
+        <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+        <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+        <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+        <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+      </div>
+      <div id="levelup-controls" style="visibility: hidden;">
+        <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('h'); render();" style="position:absolute; top: 200px; left:350px; width: 40px; background: #F1483D;">H</button>
+        <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('d'); render();" style="position:absolute; top: 200px; left:392.5px; width: 40px; background: #1463BA;">D</button>
+        <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('p'); render();" style="position:absolute; top: 200px; left:435px; width: 40px; background: #A23AB4;">P</button>
+      </div>
+</div>
   </div>
 
     <script>
+    // Begin custom functions
+    function resetGame() {
+        window.location.reload();
+    }
+
+    function openControl(getID)
+    {
+	    document.getElementById(getID).style.visibility = "visible";
+    }
+    function closeControl(getID)
+    {
+	    document.getElementById(getID).style.visibility = "hidden";
+    }
+    // End custom functions
         const
             WIDTH = 30,
             HEIGHT = 11;
@@ -1346,6 +1406,9 @@ __\\_______^/
 
             // If the player is leveling up
             if (player.levelingUp) {
+                if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                openControl('levelup-controls');
+                }
                 output +=
                     "=== LEVEL UP! ===\nChoose a stat to increase:\nH: Max HP\nD: Defense\nP: Persuasion\n";
                 document.getElementById('game').textContent = output;
@@ -1422,7 +1485,7 @@ __\\_______^/
             if (player.hp <= 0) {
                 output += `\nGood job! <span class="action">You died</span> on <span class="action">floor ${floor}</span>`;
                 gameOver = true;
-                setTimeout(() => window.location.href = "https://xxthemilkman69xx.neocities.org/dungeon/title.html", 5000);
+                setTimeout(() => window.location.href = "index.html", 5000);
             }
 
             // Render the final output to the game screen
@@ -1463,6 +1526,8 @@ __\\_______^/
 
             const tile = getTile(nx, ny);
             if (tile !== '#') {
+                const proceed = window.modifyTileInteraction?.(tile, nx, ny, randomEncounterChance);
+                if (proceed === false) return;
                 player.x = nx;
                 player.y = ny;
                 if (isMerchantTile(nx, ny)) {
@@ -2037,6 +2102,11 @@ __\\_______^/
                 document.getElementById('menu').classList.remove('hidden');
                 document.getElementById('menuSelectionDescription').textContent = '';
 
+                // Call openControl() when the menu is opened
+                if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                openControl(menuName + '-controls');
+                }
+
                 activeMenu.onOpen?.();
                 menu.render();
             },
@@ -2044,6 +2114,11 @@ __\\_______^/
                 const previousMenu = menu.breadcrumbs.pop();
                 menu.menus[previousMenu.menuName].onClose?.();
                 menu.selectionIndex = previousMenu.selectionIndex;
+
+                // Call closeControl() when the menu is closed
+                if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                closeControl(previousMenu.menuName + '-controls');
+                }
 
                 if (menu.breadcrumbs.length === 0) {
                     document.getElementById('menu').classList.add('hidden');
@@ -2363,11 +2438,6 @@ __\\_______^/
                 },
             },
         };
-
-        document.getElementById('resetButton').addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent the default link behavior
-            window.location.reload(); // Reload the current page
-        });
 
         const gambleFrames = [
     `
