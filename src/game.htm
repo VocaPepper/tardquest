@@ -879,8 +879,6 @@
                     break;
                 }
             } while (merchant.items.length === 0);
-
-            console.log("Merchant items set:", merchant.items);
         }
 
         const sfx = {
@@ -2484,6 +2482,8 @@ __\\_______^/
                 },
             },
         };
+
+        document.getElementById('resetButton').addEventListener('click', () => window.location.reload());
 
         const gambleFrames = [
     `
