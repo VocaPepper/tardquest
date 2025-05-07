@@ -46,6 +46,11 @@ Good job, idiot. You have fallen into a dungeon and have no way out except to ge
 | P | Persuade |
 | I | Open Inventory |
 
+### Touchscreen
+| Key | Action |
+| --- | ------ |
+| Tap | TOUCH MODE |
+
 #### About Persuasion
 During battle, you can try to persuade an enemy to join you in your quest. To persuade them, you can say whatever you want. Unfortunately, the enemies don't speak your language, so your words don't actually have any influence on their decision to join you or not, but they might be swayed by your attempts.
 
