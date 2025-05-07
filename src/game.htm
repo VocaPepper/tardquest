@@ -7,8 +7,7 @@
     <!-- Load UI Patches -->
     <link rel="stylesheet" href="patches/ui.css">
 
-    <style>
-        
+    <style>  
         /* ===== Scrollbar CSS ===== */
         /* Firefox */
         * {
@@ -357,7 +356,7 @@
         <div id="menuLanding"></div>
         <div id="menuList"></div>
         <div id="menuSelectionDescription"></div>
-        <div class="alignRight">Press Escape to go back</div>
+        <div class="alignRight"><a href="#" onclick="menu.close();">Press Escape or click here to go back</a></div>
     </div>
   </div>
   <div id="ui">
@@ -369,7 +368,7 @@
       </div>
     </div>
 
-<!-- Mobile Control Patches-->
+<!-- Start Mobile Control Patches-->
 <div id="mobile-controls" style="visibility: hidden;">
     <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
     <button class="button" onclick="closeControl('mobile-controls')" style="position:absolute; top: -2px; right:-2px;">X</button>
@@ -407,11 +406,13 @@
         <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('d'); render();" style="position:absolute; top: 200px; left:392.5px; width: 40px; background: #1463BA;">D</button>
         <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('p'); render();" style="position:absolute; top: 200px; left:435px; width: 40px; background: #A23AB4;">P</button>
       </div>
-</div>
+ </div>
+ <!-- End Mobile Control Patches-->
+
   </div>
 
     <script>
-    // Begin custom functions
+    // Start custom functions
     function resetGame() {
         window.location.reload();
     }
