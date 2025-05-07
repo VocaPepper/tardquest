@@ -17,7 +17,7 @@
 
 # TardQuest, but patched for touchscreen devices.
 
-### [►►► PLAY ONLINE [Patched] ◄◄◄](https://vocapepper.com/tardquest) [►►► PLAY ONLINE [Unpatched] ◄◄◄](https://xxthemilkman69xx.neocities.org/dungeon/main)
+### [►►► PLAY ONLINE [Patched]](https://vocapepper.com/tardquest) [PLAY ONLINE [Unpatched] ◄◄◄](https://xxthemilkman69xx.neocities.org/dungeon/main)
 
 A Javascript game by [Xx_TheMilkMan69_xX](https://forum.agoraroad.com/index.php?members/8701/) and [MySpace Tom](https://forum.agoraroad.com/index.php?members/3460/)
 
