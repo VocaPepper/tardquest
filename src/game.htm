@@ -4,10 +4,11 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=0.6, maximum-scale=0.6, user-scalable=no">
 
-    <!-- Load CSS Patches -->
+    <!-- Load UI Patches -->
     <link rel="stylesheet" href="patches/ui.css">
 
     <style>
+        
         /* ===== Scrollbar CSS ===== */
         /* Firefox */
         * {
@@ -291,6 +292,47 @@
         .action {
             color: #EC4134;
         }
+        /* Touch Controls */
+        .button {
+        font-family: monospace;
+        background: #000;
+        color: #fff;
+        border: 2px solid #fff;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 0px;
+        width: 50px;
+        height: 50px;
+        text-align: center;
+        touch-action: manipulation;
+        }
+        #mobile-controls {
+        height: 285px;
+        width: 570px;
+        position: absolute;
+        border: 2px solid #fff;
+        top: 637px;
+        padding: 10px;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        overflow: visible;
+        justify-content: space-between;
+        }
+        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls {
+        height: 285px;
+        width: 570px;
+        position: absolute;
+        border: 2px solid #fff;
+        top: -2px;
+        left: -2px;
+        padding: 10px;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        overflow: visible;
+        justify-content: space-between;
+        }     
   </style>
 </head>
 <body>
