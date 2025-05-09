@@ -326,7 +326,7 @@
             width: 570px;
             position: absolute;
             border: 2px solid #fff;
-            top: 637px;
+            top: 636px;
             padding: 10px;
             text-overflow: ellipsis;
             word-wrap: break-word;
@@ -348,7 +348,26 @@
             white-space: pre-wrap;
             overflow: visible;
             justify-content: space-between;
-        }  
+        } 
+        #bottomMenu {
+            height: 14px;
+            width: 570px;
+            position: absolute;
+            font-family:monospace;
+            top: 600px;
+            left: 28px;
+            padding: 10px;
+            color: #fff;
+            border: 2px solid #fff;
+            font-size: 12px;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow: visible;
+            justify-content: space-between;
+            text-align: left;
+            touch-action: manipulation;
+        } 
   </style>
 </head>
 <body>
@@ -386,7 +405,7 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
-    <a href="#" style="position:absolute; top: 615px; left:285px;" id="touchMode">ENABLE TOUCH MODE</a>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
         <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
         <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
