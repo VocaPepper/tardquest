@@ -182,12 +182,28 @@
         }
 
         #inputBox input {
-            background-color: black;
-            color: white;
-            border: none;
-            font-size: 13px;
-            width: 210px;
-            z-index: 9;
+            color: white !important;
+            border: none !important;
+            font-size: 13px !important;
+            width: 210px !important;
+            z-index: 9 !important;
+            font-family: monospace !important;
+            background: #000 !important;
+            border: 2px solid #fff !important;
+            padding: 10px !important;
+            font-size: 16px !important;
+            border-radius: 0px !important;
+            text-align: center !important;
+            touch-action: manipulation !important;
+            position: absolute !important;
+            top: 420px !important;
+            left: 315px !important;
+        }
+        input:focus,
+        select:focus,
+        textarea:focus,
+        button:focus {
+            outline: none;
         }
 
         .menus {
@@ -285,6 +301,47 @@
         .action {
             color: #EC4134;
         }
+        /* Touch Controls */
+        .button {
+            font-family: monospace;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 0px;
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            touch-action: manipulation;
+        }
+        #mobile-controls {
+            height: 285px;
+            width: 570px;
+            position: absolute;
+            border: 2px solid #fff;
+            top: 637px;
+            padding: 10px;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow: visible;
+            justify-content: space-between;
+        }
+        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls {
+            height: 285px;
+            width: 570px;
+            position: absolute;
+            border: 2px solid #fff;
+            top: -2px;
+            left: -2px;
+            padding: 10px;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow: visible;
+            justify-content: space-between;
+        }  
   </style>
 </head>
 <body>
@@ -299,6 +356,7 @@
         <p><span class="gambler">G</span> Gambler: A shady shyster</p>
         <p>H Healing Tile: Heals you to max HP</p>
         <p><span class="unexplored">?</span> Undiscovered: Who knows?</p>
+        <a href="#" onclick="openControl('mobile-controls');">TOUCH MODE</a>
       </div>
   <div id="partylist"></div>
   <div id="controls"></div>
@@ -320,6 +378,46 @@
         <input type="text" id="persuadeInput" placeholder="Say your piece...">
       </div>
     </div>
+    <!-- Start Mobile Control Patches-->
+    <div id="mobile-controls" style="visibility: hidden;">
+        <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+        <button class="button" onclick="closeControl('mobile-controls')" style="position:absolute; top: -2px; right:-2px;">X</button>
+        <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+        <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+        <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
+        <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
+        <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
+        <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
+        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
+        <div id="inventory-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        </div>
+        <div id="merchant-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        </div>
+        <div id="gambler-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        </div>
+        <div id="levelup-controls" style="visibility: hidden;">
+            <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('h'); render();" style="position:absolute; top: 200px; left:350px; width: 40px; background: #F1483D;">H</button>
+            <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('d'); render();" style="position:absolute; top: 200px; left:392.5px; width: 40px; background: #1463BA;">D</button>
+            <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('p'); render();" style="position:absolute; top: 200px; left:435px; width: 40px; background: #A23AB4;">P</button>
+        </div>
+    </div>
+    <!-- End Mobile Control Patches-->
   </div>
 
     <script>
@@ -2587,6 +2685,24 @@ __\\_______^/
         ['█▀▀▀ ', '▀▀▀▄ ', '▀▄▄▀ '], // 5
         ['▄▀▀▀ ', '█▀▀▄ ', '▀▄▄▀ '], // 6
     ];
+
+    // Touch Controls
+    function resetGame() {
+        window.location.reload();
+    }
+
+    function openControl(getID)
+    {
+        const element = document.getElementById(getID);
+        if (!element) return;
+        element.style.visibility = "visible";
+    }
+    function closeControl(getID)
+    {
+        const element = document.getElementById(getID);
+        if (!element) return;
+        element.style.visibility = "hidden";
+    }
     </script>
 
 
