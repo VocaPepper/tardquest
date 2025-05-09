@@ -17,7 +17,7 @@ function closeControl(getID)
 }
 
 // Online functionality, in alpha stages.
-//const chatSocket = new WebSocket("wss://example.com:1234")
+//const chatSocket = new WebSocket("wss://127.0.0.1:1233")
 
 chatSocket.onopen = function(event) {
     isSocketConnected = true;
@@ -36,6 +36,7 @@ chatSocket.onerror = function(event) {
 };
 
 chatSocket.onmessage = function(event) {
-    console.log(`[${data.timestamp}] [${data.type}] ${data.message}`);
-    updateBattleLog(`<span class='chat'>${data.type}: ${data.message}</span>`);
+const data = JSON.parse(event.data);
+console.log(`${data.timestamp} ${data.message}`);
+updateBattleLog(`<span class='chat'>${data.message}</span>`);
 };
