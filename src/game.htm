@@ -1442,6 +1442,9 @@ __\\_______^/
 
             // If the player is leveling up
             if (player.levelingUp) {
+            if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                openControl('levelup-controls');
+                }
                 output +=
                     "=== LEVEL UP! ===\nChoose a stat to increase:\nH: Max HP\nD: Defense\nP: Persuasion\n";
                 document.getElementById('game').textContent = output;
@@ -2133,6 +2136,11 @@ __\\_______^/
                 document.getElementById('menu').classList.remove('hidden');
                 document.getElementById('menuSelectionDescription').textContent = '';
 
+                // Call openControl() when the menu is opened
+                if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                openControl(menuName + '-controls');
+                }
+
                 activeMenu.onOpen?.();
                 menu.render();
             },
@@ -2140,6 +2148,11 @@ __\\_______^/
                 const previousMenu = menu.breadcrumbs.pop();
                 menu.menus[previousMenu.menuName].onClose?.();
                 menu.selectionIndex = previousMenu.selectionIndex;
+
+                // Call closeControl() when the menu is closed
+                if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                closeControl(previousMenu.menuName + '-controls');
+                }
 
                 if (menu.breadcrumbs.length === 0) {
                     document.getElementById('menu').classList.add('hidden');
