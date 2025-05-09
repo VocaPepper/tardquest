@@ -410,7 +410,7 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
-    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" onclick="menu.open('merchant');">SPAWN MERCHANT</a> <a href="#" onclick="menu.open('gambler');">SPAWN GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
             <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
