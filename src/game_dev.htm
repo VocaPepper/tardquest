@@ -118,7 +118,7 @@
             flex-direction: column;
             justify-content: center;
             width: 360px;
-            height: 339px;
+            height: 338px;
             /* Match or exceed #game's min-height */
             overflow: hidden;
             box-sizing: content-box;
@@ -326,7 +326,7 @@
             width: 570px;
             position: absolute;
             border: 2px solid #fff;
-            top: 637px;
+            top: 636px;
             padding: 10px;
             text-overflow: ellipsis;
             word-wrap: break-word;
@@ -349,11 +349,35 @@
             overflow: visible;
             justify-content: space-between;
         }  
+        #bottomMenu {
+            height: 14px;
+            width: 570px;
+            position: absolute;
+            font-family:monospace;
+            top: 600px;
+            left: 28px;
+            padding: 10px;
+            color: #fff;
+            border: 2px solid #fff;
+            font-size: 12px;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow: visible;
+            justify-content: space-between;
+            text-align: left;
+            touch-action: manipulation;
+        }
+        #pingDisplay {
+            font-family:monospace;
+            color: #fff;
+            font-size: 12px;
+        }
   </style>
 </head>
 <body>
   <div class="menus">
-        <a href="https://xxthemilkman69xx.neocities.org/dungeon/title.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">DISABLE MUSIC</a>
+         <a href="https://xxthemilkman69xx.neocities.org/dungeon/title.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">DISABLE MUSIC</a>
 
         <p><strong>KEY</strong></p>
         <p><span class="player">↑</span> Player: It's you!</p>
@@ -386,19 +410,19 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
-    <a href="#" style="position:absolute; top: 615px; left:285px;" id="touchMode">ENABLE TOUCH MODE</a>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
-        <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
-        <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
-        <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
-        <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
-        <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
-        <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
-        <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
-        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
+            <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
+            <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
+            <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
+            <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
+            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
         <div id="inventory-controls" style="visibility: hidden;">
-            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+        <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
