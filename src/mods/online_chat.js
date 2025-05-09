@@ -1,23 +1,4 @@
- // Touch Controls
- function resetGame() {
-    window.location.reload();
-}
-
-function openControl(getID)
-{
-    const element = document.getElementById(getID);
-    if (!element) return;
-    element.style.visibility = "visible";
-}
-function closeControl(getID)
-{
-    const element = document.getElementById(getID);
-    if (!element) return;
-    element.style.visibility = "hidden";
-}
-
-// Online functionality, in alpha stages.
-//const chatSocket = new WebSocket("wss://127.0.0.1:1233")
+const chatSocket = new WebSocket("wss://vocapepper.com:9600") // Change this to your server address
 
 chatSocket.onopen = function(event) {
     isSocketConnected = true;

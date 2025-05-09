@@ -3,11 +3,7 @@
     <title>TARDQUEST</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=0.6, maximum-scale=0.6, user-scalable=no">
-
-    <!-- Load UI Patches -->
-    <link rel="stylesheet" href="patches/ui.css">
-
-    <style>  
+    <style>
         /* ===== Scrollbar CSS ===== */
         /* Firefox */
         * {
@@ -188,13 +184,28 @@
         }
 
         #inputBox input {
-            touch-action: manipulation;
-            background-color: black;
             color: white;
             border: none;
             font-size: 13px;
             width: 210px;
             z-index: 9;
+            font-family: monospace;
+            background: #000;
+            border: 2px solid #fff;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 0px;
+            text-align: center;
+            touch-action: manipulation;
+            position: absolute;
+            top: 420px;
+            left: 315px;
+        }
+        input:focus,
+        select:focus,
+        textarea:focus,
+        button:focus {
+            outline: none;
         }
 
         .menus {
@@ -292,6 +303,47 @@
         .action {
             color: #EC4134;
         }
+        /* Touch Controls */
+        .button {
+        font-family: monospace;
+        background: #000;
+        color: #fff;
+        border: 2px solid #fff;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 0px;
+        width: 50px;
+        height: 50px;
+        text-align: center;
+        touch-action: manipulation;
+        }
+        #mobile-controls {
+        height: 285px;
+        width: 570px;
+        position: absolute;
+        border: 2px solid #fff;
+        top: 637px;
+        padding: 10px;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        overflow: visible;
+        justify-content: space-between;
+        }
+        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls {
+        height: 285px;
+        width: 570px;
+        position: absolute;
+        border: 2px solid #fff;
+        top: -2px;
+        left: -2px;
+        padding: 10px;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        overflow: visible;
+        justify-content: space-between;
+        }
   </style>
 </head>
 <body>
@@ -370,7 +422,7 @@
  <!-- End Mobile Control Patches-->
 
   </div>
-    <script src="patches/mods.js"></script>
+    <script src="mods/online_chat.js"></script>
     <script>
         const
             WIDTH = 30,
@@ -1714,8 +1766,10 @@ __\\_______^/
             if (e.key === "Enter") {
                 const message = e.target.value;
                 updateBattleLog(`YOU: "${message}"`);
+                chatSocket.send(message);
                 e.target.value = "";
                 awaitingPersuasionText = false;
+                isPersuading = false;
                 document.getElementById("inputBox").style.display = "none";
 
                 // ======== Speaking Outside Combat ========
@@ -1965,7 +2019,7 @@ __\\_______^/
                         tryRun();
                         break;
                     case 'p':
-                        tryPersuade(e);
+                        tryPersuade();
                         break;
                 }
             } else {
@@ -1989,7 +2043,7 @@ __\\_______^/
                         break;
                     case 't':
                         speakingOutsideCombat = true;
-                        tryPersuade(e);
+                        tryPersuade();
                         break;
                 }
             }
@@ -2649,6 +2703,24 @@ __\\_______^/
         ['█▀▀▀ ', '▀▀▀▄ ', '▀▄▄▀ '], // 5
         ['▄▀▀▀ ', '█▀▀▄ ', '▀▄▄▀ '], // 6
     ];
+
+    // Touch Controls
+    function resetGame() {
+        window.location.reload();
+    }
+
+    function openControl(getID)
+    {
+        const element = document.getElementById(getID);
+        if (!element) return;
+        element.style.visibility = "visible";
+    }
+    function closeControl(getID)
+    {
+        const element = document.getElementById(getID);
+        if (!element) return;
+        element.style.visibility = "hidden";
+    }
     </script>
 
 
