@@ -333,6 +333,7 @@
             white-space: pre-wrap;
             overflow: visible;
             justify-content: space-between;
+            touch-action: manipulation;
         }
         #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls {
             height: 285px;
@@ -363,7 +364,6 @@
         <p><span class="healtile">H</span> Healing Tile: Heals you to max HP</p>
         <p><span class="treasurechest">T</span> Treasure Chest: Contains items</p>
         <p><span class="unexplored">?</span> Undiscovered: Who knows?</p>
-        <a href="#" onclick="openControl('mobile-controls');">TOUCH MODE</a>
       </div>
   <div id="partylist"></div>
   <div id="controls"></div>
@@ -386,9 +386,9 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
+    <a href="#" style="position:absolute; top: 615px; left:285px;" id="touchMode">ENABLE TOUCH MODE</a>
     <div id="mobile-controls" style="visibility: hidden;">
         <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
-        <button class="button" onclick="closeControl('mobile-controls')" style="position:absolute; top: -2px; right:-2px;">X</button>
         <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
         <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
         <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
@@ -412,6 +412,13 @@
             <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
         </div>
         <div id="gambler-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        </div>
+        <div id="chest-controls" style="visibility: hidden;">
             <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
@@ -2897,10 +2904,6 @@ You found a treasure chest! Do you want to open it?
     ];
 
     // Touch Controls
-    function resetGame() {
-        window.location.reload();
-    }
-
     function openControl(getID)
     {
         const element = document.getElementById(getID);
@@ -2913,6 +2916,20 @@ You found a treasure chest! Do you want to open it?
         if (!element) return;
         element.style.visibility = "hidden";
     }
+
+    let touchEnabled = false;
+
+    document.getElementById('touchMode').addEventListener('click', () => {
+            touchEnabled = !touchEnabled;
+            const btn = document.getElementById('touchMode');
+            btn.textContent = touchEnabled ? "DISABLE TOUCH MODE" : "ENABLE TOUCH MODE";
+            if (!touchEnabled) {
+                closeControl('mobile-controls');
+            } 
+            else {
+                openControl('mobile-controls');
+            }
+        });
     </script>
 
 
