@@ -335,19 +335,13 @@
             justify-content: space-between;
             touch-action: manipulation;
         }
-        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls {
+        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls, #chest-controls {
             height: 285px;
             width: 570px;
             position: absolute;
-            border: 2px solid #fff;
-            top: -2px;
-            left: -2px;
+            top: 0px;
+            left: 0px;
             padding: 10px;
-            text-overflow: ellipsis;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            overflow: visible;
-            justify-content: space-between;
         }  
         #bottomMenu {
             height: 14px;
@@ -377,7 +371,7 @@
 </head>
 <body>
   <div class="menus">
-         <a href="https://xxthemilkman69xx.neocities.org/dungeon/title.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">DISABLE MUSIC</a>
+         <a href="../index.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">DISABLE MUSIC</a>
 
         <p><strong>KEY</strong></p>
         <p><span class="player">↑</span> Player: It's you!</p>
@@ -410,7 +404,7 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
-    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" onclick="menu.open('merchant');">SPAWN MERCHANT</a> <a href="#" onclick="menu.open('gambler');">SPAWN GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" onclick="menu.open('merchant');">FORCE MERCHANT</a> <a href="#" onclick="menu.open('gambler');">FORCE GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
             <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
@@ -1672,7 +1666,7 @@ __\\_______^/
             if (player.hp <= 0) {
                 output += `\nGood job! <span class="action">You died</span> on <span class="action">floor ${floor}</span>`;
                 gameOver = true;
-                setTimeout(() => window.location.href = "https://xxthemilkman69xx.neocities.org/dungeon/title.html", 5000);
+                setTimeout(() => window.location.href = "../index.html", 5000);
             }
 
             document.getElementById('game').innerHTML = output;
