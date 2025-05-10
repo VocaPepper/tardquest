@@ -527,9 +527,7 @@ chatSocket.onmessage = function(event) {
     }
     // Handle map update
     if (data.type === "map_update") {
-        if (typeof handleIncomingMap === "function") {
-            handleIncomingMap(data);
-        }
+        handleIncomingMap(data);
         return;
     }
     // Handle chat messages
@@ -912,7 +910,13 @@ function sendSeenTiles() {
         }
 
         function revealMap() {
-            seenTiles = seenTiles.map((col) => col.map((cell) => true));
+            // Only reveal the current floor, not every floor!
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    seenTiles[y][x] = true;
+                }
+            }
+            sendSeenTiles(); // Sync seenTiles for this floor to the server
             render();
         }
 
@@ -925,9 +929,14 @@ function sendSeenTiles() {
                 updateBattleLog(`You exploded the shit out of <span class="action">${currentEnemy.name}</span> for <span class="HP">${dmg} HP</span>!!!`);
                 endOfPlayerTurn();
             } else {
+                chatSocket.send(JSON.stringify({
+                    type: "explode_path",
+                    x: player.x,
+                    y: player.y,
+                    dir: player.dir,
+                    floor: floor
+                }));
                 updateBattleLog('<span class="action">KABOOM!</span> The dungeon walls crumble like charred toast!');
-                explodePath();
-                render();
             }
         }
 
@@ -963,6 +972,14 @@ function sendSeenTiles() {
                     breakMap(x, y);
                 }
             }
+
+            chatSocket.send(JSON.stringify({
+                type: "explode_path",
+                x: player.x,
+                y: player.y,
+                dir: player.dir,
+                floor: floor
+            }));
         }
 
         function breakMap(x, y) {
@@ -1093,10 +1110,8 @@ function sendSeenTiles() {
         }
 
         function handleIncomingMap(data) {
-            console.log("Received map from server:", data.map);
-            if (Array.isArray(data.map)) {
+            if (Array.isArray(data.map) && data.floor === floor) {
                 MAP = data.map;
-                floor = data.floor;
                 exit = data.exit;
                 updateSeenTiles();
                 drawMinimap();
@@ -2415,6 +2430,12 @@ __\\_______^/
 
         function descend() {
             floor++;
+            // Reset seenTiles for the new floor
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    seenTiles[y][x] = false;
+                }
+            }
             updateBattleLog(`Descending into floor ${floor}...`);
             requestMapFromServer();
         }
