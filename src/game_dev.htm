@@ -1896,13 +1896,13 @@ __\\_______^/
                     let tx = player.x + DX[player.dir] * d;
                     let ty = player.y + DY[player.dir] * d;
                     let tile = getTile(tx, ty);
-                    output += (tx === merchant.x && ty === merchant.y && merchant.isActiveOnFloor) ? merchantSlice(d) :
-                            (tx === gambler.x && ty === gambler.y && gambler.isActiveOnFloor) ? gamblerSlice(d) :
-                            tile === '#' ? wallSlice(d) :
-                            tile === 'E' ? exitSlice(d) :
-                            tile === 'H' ? healSlice(d) :
-                            (tile === 'T' || tile === 'M') ? treasureSlice(d) :
-                            corridorSlice(d);
+                    output += tile === '#' ? wallSlice(d) :
+                        tile === 'E' ? exitSlice(d) :
+                        tile === 'H' ? healSlice(d) :
+                        tile === 'M' ? merchantSlice(d) :
+                        tile === 'G' ? gamblerSlice(d) :
+                        (tile === 'T' || tile === 'M') ? treasureSlice(d) : // Render both normal and mimic chests
+                        corridorSlice(d);
                 }
 
                 // Logo
