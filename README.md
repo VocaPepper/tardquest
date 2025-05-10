@@ -15,10 +15,12 @@
                          |___|      / \   |
 ```
 
-# TardQuest, but patched for touchscreen devices.
+# The multiplayer update is here.
+### Chat with other players and track them on the map in real time!
+As this is in very early development stages there may be critical bugs during gameplay.
+The server is still closed source until ready for production use, but is open to all clients.
 
-### [►►► PLAY ONLINE [Patched, Stable]](https://vocapepper.com/tardquest)
-### [►►► PLAY ONLINE [LiveDev, Unstable]](https://vocapepper.com/tardquest/src/game_dev.htm)
+# [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
 ###
 A Javascript game by [Xx_TheMilkMan69_xX](https://forum.agoraroad.com/index.php?members/8701/) and [MySpace Tom](https://forum.agoraroad.com/index.php?members/3460/)
 
