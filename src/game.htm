@@ -342,7 +342,7 @@
             top: 0px;
             left: 0px;
             padding: 10px;
-        }  
+        } 
         #bottomMenu {
             height: 14px;
             width: 570px;
@@ -361,17 +361,12 @@
             justify-content: space-between;
             text-align: left;
             touch-action: manipulation;
-        }
-        #pingDisplay {
-            font-family:monospace;
-            color: #fff;
-            font-size: 12px;
-        }
+        } 
   </style>
 </head>
 <body>
   <div class="menus">
-         <a href="../index.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">DISABLE MUSIC</a>
+        <a href="../index.html">TITLE</a>  <a href="#" id="resetButton">RESET</a>  <a href="#" id="musicToggle">DISABLE MUSIC</a>
 
         <p><strong>KEY</strong></p>
         <p><span class="player">↑</span> Player: It's you!</p>
@@ -404,19 +399,19 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
-    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <!-- <a href="#" onclick="menu.open('merchant');">FORCE MERCHANT</a> <a href="#" onclick="menu.open('gambler');">FORCE GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> --> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
-            <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
-            <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
-            <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
-            <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
-            <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
-            <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
-            <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
-            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
+        <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+        <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+        <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+        <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
+        <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
+        <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
+        <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
+        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
         <div id="inventory-controls" style="visibility: hidden;">
-        <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
@@ -451,113 +446,8 @@
     </div>
     <!-- End Mobile Control Patches-->
   </div>
+
     <script>
-        const chatSocket = new WebSocket("wss://vocapepper.com:9601"); // Change this to your server address
-
-let lastPingTimestamp = 0;
-let pingInterval = null;
-
-function updatePingDisplay(ms) {
-    const el = document.getElementById("pingDisplay");
-    if (el) el.textContent = `Ping: ${ms} ms`;
-}
-
-// Send a ping every 5 seconds
-function startPing() {
-    if (pingInterval) clearInterval(pingInterval);
-    pingInterval = setInterval(() => {
-        if (chatSocket.readyState === WebSocket.OPEN) {
-            lastPingTimestamp = Date.now();
-            chatSocket.send("__ping__");
-        }
-    }, 5000);
-}
-
-chatSocket.onopen = function(event) {
-    isSocketConnected = true;
-    console.log("Connected to server.");
-    startPing();
-};
-
-chatSocket.onclose = function(event) {
-    isSocketConnected = false;
-    console.log("Disconnected from server.");
-    updatePingDisplay("--");
-    if (pingInterval) clearInterval(pingInterval);
-};
-
-chatSocket.onerror = function(event) {
-    console.error("Connection error occurred!", event);
-    updateBattleLog("<span class='action'>Connection error occurred!</span>");
-    render();
-};
-
-chatSocket.onmessage = function(event) {
-    let data;
-    try {
-        data = JSON.parse(event.data);
-    } catch {
-        console.log(event.data);
-        return;
-    }
-    // Ignore "__pong__" messages (don't show in battlelog)
-    if (data.message === "__pong__") {
-        // Optionally, update ping display here if you want to measure latency
-        if (typeof lastPingTimestamp !== "undefined" && lastPingTimestamp > 0) {
-            const latency = Date.now() - lastPingTimestamp;
-            updatePingDisplay(latency);
-        }
-        return;
-    }
-    if (data.type === "merged_seen_tiles" && data.seenTiles && data.floor === floor) {
-        // Merge received seenTiles with local seenTiles
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
-                if (data.seenTiles[y][x]) seenTiles[y][x] = true;
-            }
-        }
-        drawMinimap();
-        return;
-    }
-    // Handle player positions update
-    if (data.type === "player_positions" && data.positions && data.floor === floor) {
-        otherPlayers = data.positions;
-        drawMinimap();
-        return;
-    }
-    // Handle map update
-    if (data.type === "map_update") {
-        if (typeof handleIncomingMap === "function") {
-            handleIncomingMap(data);
-        }
-        return;
-    }
-    // Handle chat messages
-    if (data.message) {
-        console.log(`${data.timestamp} ${data.message}`);
-        updateBattleLog(`<span class='chat'>${data.message}</span>`);
-    }
-};
-
-function sendPlayerPosition() {
-    if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.send(JSON.stringify({
-            type: "player_position",
-            x: player.x,
-            y: player.y,
-            floor: floor
-        }));
-    }
-}
-function sendSeenTiles() {
-    if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.send(JSON.stringify({
-            type: "seen_tiles",
-            seenTiles: seenTiles,
-            floor: floor
-        }));
-    }
-}
         const
             WIDTH = 30,
             HEIGHT = 11;
@@ -1064,7 +954,7 @@ function sendSeenTiles() {
         music.exploration.loop = true;
         music.battleTracks.forEach(track => track.loop = true);
 
-        let otherPlayers = [];
+
         let currentMusic = null;
         let currentEnemy = null;
         let party = [];
@@ -1081,49 +971,7 @@ function sendSeenTiles() {
 
         let musicEnabled = true;
 
-        function sendMapToServer() {
-            if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-                chatSocket.send(JSON.stringify({
-                    type: "map_update",
-                    map: MAP,
-                    floor: floor,
-                    exit: exit
-                }));
-            }
-        }
-
-        function handleIncomingMap(data) {
-            console.log("Received map from server:", data.map);
-            if (Array.isArray(data.map)) {
-                MAP = data.map;
-                floor = data.floor;
-                exit = data.exit;
-                updateSeenTiles();
-                drawMinimap();
-                render();
-                updateBattleLog("<span class='action'>Map synced from server.</span>");
-                mapInitialized = true;
-            }
-        }
-
-        function generateMapAndSync() {
-            let attempts = 0; // Add a safeguard to prevent infinite recursion
-            do {
-                generateMap();
-                attempts++;
-                if (attempts > 100) {
-                    console.error("Failed to generate a valid map after 100 attempts!");
-                    break;
-                }
-            } while (!isValidMap()); // Replace with a function that checks if the map is valid
-            sendMapToServer();
-        }
-
-        window.generateMap = generateMapAndSync;
-        window.sendMapToServer = sendMapToServer;
-
         function generateMap() {
-            if (!MAP || !MAP.length) return;
             setExitPosition();
 
             // Fill in walls
@@ -1428,32 +1276,15 @@ function sendSeenTiles() {
         }
 
         function drawMinimap() {
-            if (!MAP || !MAP.length || !MAP[0] || !MAP[0].length) return;
             let out = '';
             for (let y = 0; y < HEIGHT; y++) {
                 for (let x = 0; x < WIDTH; x++) {
                     let tile = '';
                     let tileClass = '';
-                    // Check if another player is here (and not the local player)
-                    const othersHere = otherPlayers?.filter(
-                        p => p.x === x && p.y === y && p.floor === floor && !(p.x === player.x && p.y === player.y)
-                    ) || [];
                     if (x === player.x && y === player.y) {
                         const arrow = ['↑', '→', '↓', '←'][player.dir];
                         tile = arrow;
                         tileClass = 'player';
-                    } else if (othersHere.length > 0) {
-                        // Show a dot for each player (up to 3, then show a number)
-                        if (othersHere.length === 1) {
-                            // Use the color for this player
-                            const color = othersHere[0].color || "#61C9F6";
-                            tile = `<span style="color:${color}">ඞ</span>`;
-                        } else {
-                            // If multiple, use the first's color for the number
-                            const color = othersHere[0].color || "#61C9F6";
-                            tile = `<span style="color:${color}">${othersHere.length}</span>`;
-                        }
-                        tileClass = '';
                     } else if (!seenTiles[y][x]) {
                         tile = '?';
                         tileClass = 'unexplored';
@@ -1486,12 +1317,7 @@ function sendSeenTiles() {
                             }
                         }
                     }
-                    // Only wrap in span if tileClass is set, otherwise tile is already a span
-                    if (tileClass && !tile.startsWith('<span')) {
-                        out += `<span class="${tileClass}">${tile}</span>`;
-                    } else {
-                        out += tile;
-                    }
+                    out += `<span class="${tileClass}">${tile}</span>`;
                 }
                 out += '<br>';
             }
@@ -1755,7 +1581,6 @@ __\\_______^/
 
 
         function render() {
-            if (!MAP || !MAP.length || !MAP[0] || !MAP[0].length) return;
             updateSeenTiles();
             drawMinimap();
             let output = "";
@@ -1892,7 +1717,6 @@ __\\_______^/
                 } else if (Math.random() < randomEncounterChance) {
                     startEncounter();
                 }
-                sendPlayerPosition();
             }
         }
 
@@ -2076,7 +1900,6 @@ __\\_______^/
             if (e.key === "Enter") {
                 const message = e.target.value;
                 updateBattleLog(`YOU: "${message}"`);
-                chatSocket.send(message);
                 e.target.value = "";
                 awaitingPersuasionText = false;
                 document.getElementById("inputBox").style.display = "none";
@@ -2416,31 +2239,45 @@ __\\_______^/
         function descend() {
             floor++;
             updateBattleLog(`Descending into floor ${floor}...`);
-            requestMapFromServer();
-        }
 
-        function requestMapFromServer() {
-            if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-                chatSocket.send(JSON.stringify({ type: "request_map", floor: floor }));
+            const floorBoost = Math.floor(floor / 2);
+            if (floorBoost > lastFloorBoostNotice) {
+                updateBattleLog(`<span class="action">As you descend deeper into the dungeon, you sense greater danger than before</span>.`);
+                lastFloorBoostNotice = floorBoost;
             }
-        }
 
-        let mapInitialized = false;
+            if (Math.random() < 0.5) {
+                const flavorText = [
+                    "The stale air fills your nostrils.",
+                    "You feel like you're being watched.",
+                    "A chill creeps down your spine.",
+                    "Your torch flickers strangely in the windless corridor.",
+                    "A draft carries the scent of mildew, ash, and Lemon Pledge.",
+                    "You hear a dog yipping in the distance.",
+                    "An empty snail shell lies cracked on the stairs.",
+                    "A growl echoes through the hallway.",
+                    "A faint smell of urinal cake wafts up from below.",
+                    "You hear a toilet flush in the distance.",
+                    "There's graffiti on the wall: \"Beware the snail!\"",
+                    "You smell something pungent. Possibly ancient evil. Possibly cheese.",
+                    "You hear a groan, as if the dungeon itself is aware of your presence.",
+                    "Somewhere ahead, something clanks. You sincerely hope it's plumbing.",
+                    "You hear a plunger plunging menacingly.",
+                ];
 
-        // Wait for map from server, or generate if none arrives
-        function initializeMap() {
-            function tryRequest() {
-                if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-                    requestMapFromServer();
-                } else {
-                    setTimeout(tryRequest, 100); // Try again in 100ms
-                }
+                const logLine = flavorText[Math.floor(Math.random() * flavorText.length)];
+                updateBattleLog(logLine);
             }
-            tryRequest();
+
+            generateMap();
         }
 
-        initializeMap();
-        playMusic('exploration');
+
+        generateMap();
+        updateSeenTiles(); 
+        drawMinimap(); 
+        playMusic('exploration'); 
+        render(); 
 
         document.getElementById('musicToggle').addEventListener('click', () => {
             musicEnabled = !musicEnabled;
@@ -2979,7 +2816,7 @@ You found a treasure chest! Do you want to open it?
 
                       ..__
             __________\`.  '-
-           (___________ \`.  '
+           (___________ \`.  '-.
             (__________
              (________
                (____          _
@@ -2996,7 +2833,7 @@ You found a treasure chest! Do you want to open it?
 
                           ..__
                 __________\`.  '-
-               (___________ \`.  '-.
+               (___________ \`.  '
                 (__________
                  (________
                    (____
