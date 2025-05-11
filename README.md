@@ -21,7 +21,7 @@ As this is in very early development stages there may be critical bugs during ga
 
 ### Known bugs
 - Items may not display in the Merchant menu
-- Gambler will spawn regardless of BTC owned (server sided issue)
+- Gambler will spawn regardless of BTC owned
 - Maps may not generate correctly
 - C4 tends to stop working after single-use by any player
 - C4 can destroy exits
