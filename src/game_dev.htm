@@ -468,7 +468,7 @@ function startPing() {
     pingInterval = setInterval(() => {
         if (chatSocket.readyState === WebSocket.OPEN) {
             lastPingTimestamp = Date.now();
-            chatSocket.send("__ping__");
+            // chatSocket.send("__ping__");
         }
     }, 5000);
 }
@@ -1305,9 +1305,23 @@ function sendSeenTiles() {
         function interactWithChest(x, y) {
             const tile = MAP[y][x];
 
-            if (tile === 'T' || tile === 'M') {
+            if (tile === 'T' || tile === 'W') {
                 player.currentChest = { x, y };
                 menu.open("chest");
+            }
+        }
+
+        function interactWithMerchant(x, y) {
+            const tile = MAP[y][x];
+            if (tile === 'M') {
+                menu.open("merchant");
+            }
+        }
+
+        function interactWithGambler(x, y) {
+            const tile = MAP[y][x];
+            if (tile === 'G') {
+                menu.open("gambler");
             }
         }
 
@@ -1523,31 +1537,34 @@ function sendSeenTiles() {
                         if (othersHere.length === 1) {
                             // Use the color for this player
                             const color = othersHere[0].color || "#61C9F6";
-                            tile = `<span style="color:${color}">ඞ</span>`;
+                            tile = `<span style="color:${color}">P</span>`;
                         } else {
                             // If multiple, use the first's color for the number
                             const color = othersHere[0].color || "#61C9F6";
                             tile = `<span style="color:${color}">${othersHere.length}</span>`;
                         }
                         tileClass = '';
-                    } else if (!seenTiles[y][x]) {
-                        tile = '?';
-                        tileClass = 'unexplored';
-                    } else {
-                        if (isMerchantTile(x, y)) {
-                            tile = 'M';
-                            tileClass = 'merchant';
-                        } else if (isGamblerTile(x, y)) {
-                            tile = 'G';
-                            tileClass = 'gambler';
-                        } else if (MAP[y][x] === 'T' || MAP[y][x] === 'M') {
-                            tile = 'T'; // Mimics appear as normal chests
-                            tileClass = 'treasurechest';
-                        } else if (MAP[y][x] === 'H') {
-                            tile = 'H';
-                            tileClass = 'healtile';
+                        } else if (!seenTiles[y][x]) {
+                            tile = '?';
+                            tileClass = 'unexplored';
                         } else {
                             switch (MAP[y][x]) {
+                                case 'M':
+                                    tile = merchant.isAlive ? 'M' : '.';
+                                    tileClass = merchant.isAlive ? 'merchant' : 'explored';
+                                    break;
+                                case 'G':
+                                    tile = gambler.isAlive ? 'G' : '.';
+                                    tileClass = gambler.isAlive ? 'gambler' : 'explored';
+                                    break;
+                                case 'T':
+                                    tile = 'T';
+                                    tileClass = 'treasurechest';
+                                    break;
+                                case 'H':
+                                    tile = 'H';
+                                    tileClass = 'healtile';
+                                    break;
                                 case '#':
                                     tile = '#';
                                     tileClass = 'wall';
@@ -1561,7 +1578,6 @@ function sendSeenTiles() {
                                     tileClass = 'explored';
                             }
                         }
-                    }
                     // Only wrap in span if tileClass is set, otherwise tile is already a span
                     if (tileClass && !tile.startsWith('<span')) {
                         out += `<span class="${tileClass}">${tile}</span>`;
@@ -1579,7 +1595,6 @@ function sendSeenTiles() {
         }
 
         function isGamblerTile(x, y) {
-            // The gambler won't appear if the player is broke
             return gambler.isActiveOnFloor && player.bitcoins >= gambler.playPrice && x === gambler.x && y === gambler.y;
         }
 
@@ -1901,7 +1916,7 @@ __\\_______^/
                         tile === 'H' ? healSlice(d) :
                         tile === 'M' ? merchantSlice(d) :
                         tile === 'G' ? gamblerSlice(d) :
-                        (tile === 'T' || tile === 'M') ? treasureSlice(d) : // Render both normal and mimic chests
+                        (tile === 'T' || tile === 'W') ? treasureSlice(d) : // Render both normal and mimic chests
                         corridorSlice(d);
                 }
 
@@ -1971,15 +1986,15 @@ __\\_______^/
             if (tile !== '#') {
                 player.x = nx;
                 player.y = ny;
-                if (isMerchantTile(nx, ny)) {
+                if (interactWithMerchant(nx, ny)) {
                     menu.open('merchant');
-                } else if (isGamblerTile(nx, ny)) {
+                } else if (interactWithGambler(nx, ny)) {
                     menu.open('gambler');
                 } else if (tile === 'E') {
                     descend();
                 } else if (tile === 'H') {
                     interactWithHealingTile(nx, ny);
-                } else if (tile === 'T' || tile === 'M') {
+                } else if (tile === 'T' || tile === 'W') {
                     interactWithChest(nx, ny);
                 } else if (Math.random() < randomEncounterChance) {
                     startEncounter();
@@ -2395,7 +2410,7 @@ __\\_______^/
             const { x, y } = player.currentChest;
             const tile = MAP[y][x];
 
-            if (tile === 'M') {
+            if (tile === 'W') {
                 // Mimic detected, start a battle
                 playSFX('scream');
                 MAP[y][x] = '.'; // Remove the mimic from the map
