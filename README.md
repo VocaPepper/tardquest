@@ -28,6 +28,7 @@ As this is in very early development stages there may be critical bugs during ga
 - Rarely the {"type":"seen_tiles","seenTiles"} message from client-to-server gets broadcasted in the battle log
 
 # [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
+
 ###
 A Javascript game by [Xx_TheMilkMan69_xX](https://forum.agoraroad.com/index.php?members/8701/) and [MySpace Tom](https://forum.agoraroad.com/index.php?members/3460/)
 
