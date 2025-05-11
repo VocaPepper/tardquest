@@ -15,10 +15,20 @@
                          |___|      / \   |
 ```
 
-# TardQuest, but patched for touchscreen devices.
+# The multiplayer update is here.
+### Chat with other players and track them on the map in real time!
+As this is in very early development stages there may be critical bugs during gameplay.
 
-### [►►► PLAY ONLINE [Patched, Stable]](https://vocapepper.com/tardquest)
-### [►►► PLAY ONLINE [LiveDev, Unstable]](https://vocapepper.com/tardquest/src/game_dev.htm)
+### Known bugs
+- Items may not display in the Merchant menu
+- Gambler will spawn regardless of BTC owned
+- Maps may not generate correctly
+- C4 tends to stop working after single-use by any player
+- C4 can destroy exits
+- Rarely the {"type":"seen_tiles","seenTiles"} message from client-to-server gets broadcasted in the battle log
+
+# [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
+
 ###
 A Javascript game by [Xx_TheMilkMan69_xX](https://forum.agoraroad.com/index.php?members/8701/) and [MySpace Tom](https://forum.agoraroad.com/index.php?members/3460/)
 
