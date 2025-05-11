@@ -18,7 +18,14 @@
 # The multiplayer update is here.
 ### Chat with other players and track them on the map in real time!
 As this is in very early development stages there may be critical bugs during gameplay.
-The server is still closed source until ready for production use, but is open to all clients.
+
+### Known bugs
+- Items may not display in the Merchant menu
+- Gambler will spawn regardless of BTC owned (server sided issue)
+- Maps may not generate correctly
+- C4 tends to stop working after single-use by any player
+- C4 can destroy exits
+- Rarely the {"type":"seen_tiles","seenTiles"} message from client-to-server gets broadcasted in the battle log
 
 # [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
 ###
