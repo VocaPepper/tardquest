@@ -506,7 +506,7 @@
     <!-- End Mobile Control Patches-->
   </div>
     <script>
-        const chatSocket = new WebSocket("wss://vocapepper.com:9601"); // Change this to your server address
+        const mainServer = new WebSocket("wss://vocapepper.com:9601"); // Change this to your server address
 
 let lastPingTimestamp = 0;
 let pingInterval = null;
@@ -520,34 +520,34 @@ function updatePingDisplay(ms) {
 function startPing() {
     if (pingInterval) clearInterval(pingInterval);
     pingInterval = setInterval(() => {
-        if (chatSocket.readyState === WebSocket.OPEN) {
+        if (mainServer.readyState === WebSocket.OPEN) {
             lastPingTimestamp = Date.now();
-            chatSocket.send("__ping__");
+            mainServer.send("__ping__");
         }
     }, 5000);
 }
 
-chatSocket.onopen = function(event) {
+mainServer.onopen = function(event) {
     isSocketConnected = true;
     console.log("Connected to server.");
     updateChatLog("<span class='action'>Connected to server.</span>");
     startPing();
 };
 
-chatSocket.onclose = function(event) {
+mainServer.onclose = function(event) {
     isSocketConnected = false;
     console.log("Disconnected from server.");
     updatePingDisplay("--");
     if (pingInterval) clearInterval(pingInterval);
 };
 
-chatSocket.onerror = function(event) {
+mainServer.onerror = function(event) {
     console.error("Connection error occurred!", event);
     updateChatLog("<span class='action'>Connection error occurred!</span>");
     render();
 };
 
-chatSocket.onmessage = function(event) {
+mainServer.onmessage = function(event) {
     let data;
     try {
         data = JSON.parse(event.data);
@@ -593,8 +593,8 @@ chatSocket.onmessage = function(event) {
 };
 
 function sendPlayerPosition() {
-    if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.send(JSON.stringify({
+    if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
+        mainServer.send(JSON.stringify({
             type: "player_position",
             x: player.x,
             y: player.y,
@@ -603,8 +603,8 @@ function sendPlayerPosition() {
     }
 }
 function sendSeenTiles() {
-    if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.send(JSON.stringify({
+    if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
+        mainServer.send(JSON.stringify({
             type: "seen_tiles",
             seenTiles: seenTiles,
             floor: floor
@@ -1051,7 +1051,7 @@ function sendSeenTiles() {
                 updateBattleLog(`You exploded the shit out of <span class="action">${currentEnemy.name}</span> for <span class="HP">${dmg} HP</span>!!!`);
                 endOfPlayerTurn();
             } else {
-                chatSocket.send(JSON.stringify({
+                mainServer.send(JSON.stringify({
                     type: "explode_path",
                     x: player.x,
                     y: player.y,
@@ -1095,7 +1095,7 @@ function sendSeenTiles() {
                 }
             }
 
-            chatSocket.send(JSON.stringify({
+            mainServer.send(JSON.stringify({
                 type: "explode_path",
                 x: player.x,
                 y: player.y,
@@ -1223,8 +1223,8 @@ function sendSeenTiles() {
         let musicEnabled = true;
 
         function sendMapToServer() {
-            if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-                chatSocket.send(JSON.stringify({
+            if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
+                mainServer.send(JSON.stringify({
                     type: "map_update",
                     map: MAP,
                     floor: floor,
@@ -2290,7 +2290,7 @@ __\\_______^/
             if (e.key === "Enter") {
                 const message = e.target.value;
                 updateBattleLog(`YOU: "${message}"`);
-                chatSocket.send(message);
+                mainServer.send(message);
                 e.target.value = "";
                 awaitingPersuasionText = false;
                 document.getElementById("inputBox").style.display = "none";
@@ -2350,7 +2350,7 @@ __\\_______^/
         if (e.key === "Enter") {
             const message = e.target.value;
             updateChatLog(`YOU: "${message}"`);
-            chatSocket.send(message);
+            mainServer.send(message);
             e.target.value = "";
             awaitingPersuasionText = false;
             render();
@@ -2655,8 +2655,8 @@ __\\_______^/
         }
 
         function requestMapFromServer() {
-            if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
-                chatSocket.send(JSON.stringify({ type: "request_map", floor: floor }));
+            if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
+                mainServer.send(JSON.stringify({ type: "request_map", floor: floor }));
             }
         }
 
@@ -2665,7 +2665,7 @@ __\\_______^/
         // Wait for map from server, or generate if none arrives
         function initializeMap() {
             function tryRequest() {
-                if (typeof chatSocket !== "undefined" && chatSocket.readyState === WebSocket.OPEN) {
+                if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
                     requestMapFromServer();
                 } else {
                     setTimeout(tryRequest, 100); // Try again in 100ms
