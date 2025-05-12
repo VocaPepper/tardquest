@@ -323,10 +323,10 @@
         }
         #mobile-controls {
             height: 285px;
-            width: 570px;
+            width: 792px;
             position: absolute;
             border: 2px solid #fff;
-            top: 636px;
+            top: 635px;
             padding: 10px;
             text-overflow: ellipsis;
             word-wrap: break-word;
@@ -337,18 +337,18 @@
         }
         #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls, #chest-controls {
             height: 285px;
-            width: 570px;
+            width: 792px;
             position: absolute;
             top: 0px;
             left: 0px;
             padding: 10px;
         }  
         #bottomMenu {
-            height: 14px;
+            height: 13px;
             width: 570px;
             position: absolute;
             font-family:monospace;
-            top: 600px;
+            top: 601px;
             left: 28px;
             padding: 10px;
             color: #fff;
@@ -361,6 +361,39 @@
             justify-content: space-between;
             text-align: left;
             touch-action: manipulation;
+        }
+        #chatLog {
+            height: 572px;
+            width: 200px;
+            padding: 10px;
+            position: absolute;
+            left: 620px;
+            color: #fff;
+            border: 2px solid #fff;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow-y: scroll;
+            touch-action: manipulation;
+        }
+        #typeMessage input {
+        color: white;
+        border: none;
+        font-size: 10px;
+        width: 200px;
+        height: 13px;
+        z-index: 9;
+        font-family: monospace;
+        background: #000;
+        border: 2px solid #fff;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 0px;
+        text-align: center;
+        touch-action: manipulation;
+        position: absolute;
+        top: 601px;
+        left: 620px;
         }
         #pingDisplay {
             font-family:monospace;
@@ -404,44 +437,66 @@
       </div>
     </div>
     <!-- Start Mobile Control Patches-->
+    <div id="chatLog"></div>
+    <div id="typeMessage"><input type="text" id="chatInput" onclick="focusChat();" placeholder="Click here to chat..."></div>
     <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <!-- <a href="#" onclick="menu.open('merchant');">FORCE MERCHANT</a> <a href="#" onclick="menu.open('gambler');">FORCE GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> --> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
             <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>            
             <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
-            <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Talk</button>
-            <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
-            <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
-            <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
-            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Persuade</button> 
+            <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; right:75px;">↓</button>
+            <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; right:75px;">↑</button>
+            <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; right:125px;">←</button>
+            <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; right:25px;">→</button>
+            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:270px; width: 125px;">Talk</button>
+            <button class="button" onclick="openControl('inventory-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:270px; width: 125px;">Inventory</button>
+            <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:270px; width: 125px;">Attack</button>
+            <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:420px; width: 125px;">Run</button>
+            <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 125px; left:420px; width: 125px;">Persuade</button> 
         <div id="inventory-controls" style="visibility: hidden;">
-        <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowup');" style="position:absolute; top: 75px; right:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowdown');" style="position:absolute; top: 175px; right:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('arrowleft');" style="position:absolute; top: 125px; right:125px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright');" style="position:absolute; top: 125px; right:25px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:420px; width: 125px;">Confirm</button>
         </div>
         <div id="merchant-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup');" style="position:absolute; top: 75px; right:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowdown');" style="position:absolute; top: 175px; right:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('arrowleft');" style="position:absolute; top: 125px; right:125px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright');" style="position:absolute; top: 125px; right:25px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:420px; width: 125px;">Confirm</button>
         </div>
         <div id="gambler-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup');" style="position:absolute; top: 75px; right:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowdown');" style="position:absolute; top: 175px; right:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('arrowleft');" style="position:absolute; top: 125px; right:125px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright');" style="position:absolute; top: 125px; right:25px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:420px; width: 125px;">Confirm</button>
         </div>
         <div id="chest-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup');" style="position:absolute; top: 75px; right:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowdown');" style="position:absolute; top: 175px; right:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('arrowleft');" style="position:absolute; top: 125px; right:125px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright');" style="position:absolute; top: 125px; right:25px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
-            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:420px; width: 125px;">Confirm</button>
         </div>
         <div id="levelup-controls" style="visibility: hidden;">
             <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('h'); render();" style="position:absolute; top: 200px; left:350px; width: 40px; background: #F1483D;">H</button>
@@ -476,6 +531,7 @@ function startPing() {
 chatSocket.onopen = function(event) {
     isSocketConnected = true;
     console.log("Connected to server.");
+    updateChatLog("<span class='action'>Connected to server.</span>");
     startPing();
 };
 
@@ -488,7 +544,7 @@ chatSocket.onclose = function(event) {
 
 chatSocket.onerror = function(event) {
     console.error("Connection error occurred!", event);
-    updateBattleLog("<span class='action'>Connection error occurred!</span>");
+    updateChatLog("<span class='action'>Connection error occurred!</span>");
     render();
 };
 
@@ -533,7 +589,7 @@ chatSocket.onmessage = function(event) {
     // Handle chat messages
     if (data.message) {
         console.log(`${data.timestamp} ${data.message}`);
-        updateBattleLog(`<span class='chat'>${data.message}</span>`);
+        updateChatLog(`<span class='chat'>${data.message}</span>`);
     }
 };
 
@@ -1157,6 +1213,7 @@ function sendSeenTiles() {
         let awaitingPersuasionText = false;
         let speakingOutsideCombat = false;
         let battleLog = [];
+        let chatLog = [];
         let floor = 1;
         let MAP = [];
         let exit = {
@@ -1184,7 +1241,7 @@ function sendSeenTiles() {
                 updateSeenTiles();
                 drawMinimap();
                 render();
-                updateBattleLog("<span class='action'>Map synced from server.</span>");
+                updateChatLog("<span class='action'>Map synced from server.</span>");
                 mapInitialized = true;
             }
         }
@@ -1623,6 +1680,24 @@ function sendSeenTiles() {
                 .join("");
         }
 
+        function updateChatLog(entry) {
+             chatLog.push(entry);
+            if ( chatLog.length > 50) {
+                 chatLog.shift();
+            }
+
+            const logContainer = document.getElementById("chatLog");
+            logContainer.innerHTML = [...chatLog]
+                .slice()
+                .reverse()
+                .map((msg, i) => {
+                    const lightness = 100 - (i * 15); // Fade effect
+                    const color = `hsl(0, 0%, ${Math.max(lightness, 50)}%)`; // Prevent it from getting too dark
+                    return `<div style="color: ${color};">${msg}</div>`;
+                })
+                .join("");
+        }
+
         function playMusic(type) {
             if (!musicEnabled) return; // Do nothing if music is disabled
 
@@ -1920,6 +1995,10 @@ __\\_______^/
                     document.getElementById("partylist").innerHTML = '';
                 }
 
+                if (!awaitingPersuasionText) {
+                    document.getElementById("controls").textContent =
+                        "A:      Attack\nR:      Run\nP:      Persuade\nI:      Inventory";
+                }
                 if (!awaitingPersuasionText) {
                     document.getElementById("controls").textContent =
                         "A:      Attack\nR:      Run\nP:      Persuade\nI:      Inventory";
@@ -2267,6 +2346,21 @@ __\\_______^/
                 render();
             }
         });
+
+        document.getElementById("chatInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            const message = e.target.value;
+            updateChatLog(`YOU: "${message}"`);
+            chatSocket.send(message);
+            e.target.value = "";
+            awaitingPersuasionText = false;
+            render();
+        }
+    });
+
+    function focusChat() {
+        awaitingPersuasionText = true;
+    }
 
 
 
@@ -3243,7 +3337,7 @@ You found a treasure chest! Do you want to open it?
             btn.textContent = touchEnabled ? "DISABLE TOUCH MODE" : "ENABLE TOUCH MODE";
             if (!touchEnabled) {
                 closeControl('mobile-controls');
-            } 
+            }
             else {
                 openControl('mobile-controls');
             }
