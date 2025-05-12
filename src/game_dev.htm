@@ -468,7 +468,7 @@ function startPing() {
     pingInterval = setInterval(() => {
         if (chatSocket.readyState === WebSocket.OPEN) {
             lastPingTimestamp = Date.now();
-            // chatSocket.send("__ping__");
+            chatSocket.send("__ping__");
         }
     }, 5000);
 }
@@ -740,6 +740,13 @@ function sendSeenTiles() {
                 name: "MIMIC",
                 hp: 120,
                 attack: [7, 14],
+                bitcoins: 100,
+            },
+            {
+                id: "serverAdmin",
+                name: "SERVER ADMIN",
+                hp: 99,
+                attack: [1, 2],
                 bitcoins: 100,
             },
         ];
@@ -1724,6 +1731,25 @@ __\\_______^/
 |(00)|
  )vv(
 `;
+                case "serverAdmin":
+                    return `
+                                        /\\
+                                      / |  \\
+                                    /   |   \\                                                       
+                                    \\   |   /                                    
+                                    \\   |   /                                                                                                               
+                        (o)          \\  |  /                                                         
+                       ((o))         \\  |  /                                                         
+                      (o(o)o)        \\  |  /                                                         
+                     ((o(o)o))        \\ | /                                                          
+                    (o(o(o)o)o)      -X-|-X-                                                  
+                   ((o(o(o)o)o))--------|                                                                   
+                    (o(o(o)o)o)         X                                                           
+                     ((o(o)o))                                                                     
+                      (o(o)o)                                                                      
+                       ((o))                                                                     
+                        (o)                                                                                                                       
+`;
                 case "keeperOfTheToiletBowl":
                     return `
 
@@ -2022,14 +2048,17 @@ __\\_______^/
         }
 
         function startEncounter() {
-            // Filter out the mimic from the random enemy pool
-            const randomEnemies = enemies.filter(enemy => enemy.id !== "mimic");
-
-            // Pick a random enemy
-            currentEnemy = structuredClone(
-                randomEnemies[Math.floor(Math.random() * randomEnemies.length)]
-            );
-
+            const randomEnemies = enemies.filter(enemy => enemy.id !== "mimic", "serverAdmin");
+            const serverAdmin = enemies.find(enemy => enemy.id === "serverAdmin");
+            const serverAdminSpawnChance = 0.005 / (floor + 0.005); // Increase chance with each floor
+            
+            if (serverAdmin && Math.random() < serverAdminSpawnChance) {
+                currentEnemy = structuredClone(serverAdmin);
+            } else {
+                currentEnemy = structuredClone(
+                    randomEnemies[Math.floor(Math.random() * randomEnemies.length)]
+                );
+            }
             // Scale enemy stats based on floor
             const floorBoost = Math.floor(floor / 2); // Scale every 2 floors
             if (floorBoost > 0) {
