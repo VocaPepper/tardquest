@@ -1284,14 +1284,25 @@ function sendSeenTiles() {
         }
 
         function handleIncomingMap(data) {
-            if (Array.isArray(data.map) && data.floor === floor) {
+            if (Array.isArray(data.map) && data.floor) {
+                // Check if this is a load game scenario (player should be moved to new position)
+                if (data.floor !== floor) {
+                    seenTiles = Array.from({length: HEIGHT}, () => Array(WIDTH).fill(false));
+                    floor = data.floor;
+                }
+                
                 MAP = data.map;
                 exit = data.exit;
                 updateSeenTiles();
                 drawMinimap();
                 render();
-                updateChatLog("<span class='action'>Map synced from server.</span>");
-                mapInitialized = true;
+                
+                // If this was triggered by a load game, we need to update the player position
+                if (data.load_game_position) {
+                    player.x = data.load_game_position.x;
+                    player.y = data.load_game_position.y;
+                    sendPlayerPosition();
+                }
             }
         }
 
