@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>TARDQUEST</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=0.5, user-scalable=no">
     <style>
         /* ===== Scrollbar CSS ===== */
         /* Firefox */
@@ -359,10 +358,10 @@
         }
         #mobile-controls {
             height: 285px;
-            width: 570px;
+            width: 672px;
             position: absolute;
             border: 2px solid #fff;
-            top: 636px;
+            top: 640px;
             padding: 10px;
             text-overflow: ellipsis;
             word-wrap: break-word;
@@ -371,7 +370,7 @@
             justify-content: space-between;
             touch-action: manipulation;
         }
-        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls, #chest-controls {
+        #merchant-controls, #gambler-controls, #inventory-controls, #levelup-controls, #chest-controls, #statAllocation-controls {
             height: 285px;
             width: 570px;
             position: absolute;
@@ -380,7 +379,7 @@
             padding: 10px;
         } 
         #bottomMenu {
-            height: 14px;
+            height: 18px;
             width: 570px;
             position: absolute;
             font-family:monospace;
@@ -477,9 +476,18 @@
             <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
         </div>
         <div id="levelup-controls" style="visibility: hidden;">
-            <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('h'); render();" style="position:absolute; top: 200px; left:350px; width: 40px; background: #F1483D;">H</button>
-            <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('d'); render();" style="position:absolute; top: 200px; left:392.5px; width: 40px; background: #1463BA;">D</button>
-            <button class="button" onclick="closeControl('levelup-controls'); handleLevelUpInput('p'); render();" style="position:absolute; top: 200px; left:435px; width: 40px; background: #A23AB4;">P</button>
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        </div>
+            <div id="statAllocation-controls">
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
         </div>
     </div>
     <!-- End Mobile Control Patches-->
