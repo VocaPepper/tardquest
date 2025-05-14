@@ -388,7 +388,7 @@
             padding: 10px;
             color: #fff;
             border: 2px solid #fff;
-            font-size: 12px;
+            font-size: 15px;
             text-overflow: ellipsis;
             word-wrap: break-word;
             white-space: pre-wrap;
@@ -433,7 +433,42 @@
         #pingDisplay {
             font-family:monospace;
             color: #fff;
-            font-size: 12px;
+            font-size: 15px;
+        }
+        #loginModal input {
+            color: white;
+            border: none;
+            font-size: 15px;
+            width: 200px;
+            height: 25px;
+            z-index: 9;
+            font-family: monospace;
+            background: #000;
+            border: 2px solid #fff;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 0px;
+            text-align: center;
+            touch-action: manipulation;
+            margin-bottom: 10px;
+        }
+        #loginModal button {
+            font-family: monospace;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px;
+            font-size: 15px;
+            border-radius: 0px;
+            width: 225px;
+            height: 50px;
+            text-align: center;
+            touch-action: manipulation;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        #loginModal button:hover {
+            background: #222;
         }
   </style>
 </head>
@@ -476,7 +511,7 @@
     <!-- Start Mobile Control Patches-->
     <div id="chatLog"></div>
     <div id="typeMessage"><input type="text" id="chatInput" onclick="focusChat();" placeholder="Click here to chat..."></div>
-    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <!-- <a href="#" onclick="menu.open('merchant');">FORCE MERCHANT</a> <a href="#" onclick="menu.open('gambler');">FORCE GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> --> <a href="#" style="text-decoration: none;" id="pingDisplay">Ping: -- ms</a></div>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" onclick="logout();">LOGOUT</a> <!-- <a href="#" onclick="menu.open('merchant');">FORCE MERCHANT</a> <a href="#" onclick="menu.open('gambler');">FORCE GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> --> <a href="#" style="text-decoration: none; position: absolute; right: 10px;" id="pingDisplay">-- ms</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
             <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>            
@@ -533,24 +568,119 @@
     </div>
     <!-- End Mobile Control Patches-->
   </div>
-    <script>
-        const mainServer = new WebSocket("wss://vocapepper.com:9601"); // Change this to your server address
+  <div id="loginModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;">
+    <div style="background:#000;padding:32px 48px;border:2px solid #fff;box-shadow:0 0 32px #000;display:flex;flex-direction:column;align-items:center;">
+      <h2 style="color:#fff;margin-bottom:16px;">Login to TARDQUEST</h2>
+      <input id="loginUsername" type="text" placeholder="Username">
+      <input id="loginPassword" type="password" placeholder="Password">
+      <button id="loginButton">Login</button>
+      <button id="registerButton">Register</button>
+      <div id="loginError" style="color:#f44;margin-top:12px;min-height:24px;"></div>
+    </div>
+  </div>
+<script>
+const mainServer = new WebSocket("wss://vocapepper.com:9601"); // Change this to your server address
 
 let lastPingTimestamp = 0;
 let pingInterval = null;
+let isSocketConnected = false;
+
+// Handle server responses
+mainServer.onmessage = function(event) {
+  let data;
+  try {
+    data = JSON.parse(event.data);
+  } catch {
+    console.log(event.data);
+    return;
+  }
+
+  // Handle ping response
+  if (data.type === "__pong__" || data.message === "__pong__") {
+    if (typeof lastPingTimestamp !== "undefined" && lastPingTimestamp > 0) {
+      const latency = Date.now() - lastPingTimestamp;
+      updatePingDisplay(latency);
+    }
+    return;
+  }
+
+  // Handle login/register result as JSON
+  if (data.type === 'login_result' || data.type === 'register_result') {
+    if (data.success) {
+      sessionToken = data.session_token;
+      allowGameAfterLogin();
+      document.getElementById('loginError').textContent = '';
+      updateChatLog(`<span class='chat'>${data.message}</span>`); // Show login/register success in chatlog
+      requestMapFromServer(); // Request the map after login
+    } else {
+      document.getElementById('loginError').textContent = data.message || 'Login/Register failed.';
+      updateChatLog(`<span class='chat'>${data.message || 'Login/Register failed.'}</span>`); // Show login/register error in chatlog
+      sessionToken = null;
+      blockGameUntilLogin();
+    }
+    return;
+  }
+
+  // Handle map and player updates
+  if (data.type === "merged_seen_tiles" && data.seenTiles && data.floor === floor) {
+    for (let y = 0; y < HEIGHT; y++) {
+      for (let x = 0; x < WIDTH; x++) {
+        if (data.seenTiles[y][x]) seenTiles[y][x] = true;
+      }
+    }
+    drawMinimap();
+    return;
+  }
+
+  if (data.type === "player_positions" && data.positions && data.floor === floor) {
+    otherPlayers = data.positions;
+    drawMinimap();
+    return;
+  }
+
+  if (data.type === "map_update") {
+    handleIncomingMap(data);
+    return;
+  }
+
+  // Handle chat/action/error messages
+  if (data.type === "chat") {
+    updateChatLog(`<span class="player">${data.username || ''}</span>: ${data.message}`);
+    return;
+  }
+
+  if (data.type === "action") {
+    updateChatLog(`<span class="action">${data.message}</span>`);
+    return;
+  }
+
+  if (data.type === "error") {
+    updateChatLog(`<span class="error">${data.message}</span>`);
+    return;
+  }
+
+  // Fallback: log unknown message
+  if (data.message) {
+    console.log(`${data.timestamp || ''} ${data.message}`);
+    updateChatLog(`<span class='chat'>${data.message}</span>`);
+  } else {
+    console.log("Unknown message type:", data);
+  }
+};
 
 function updatePingDisplay(ms) {
     const el = document.getElementById("pingDisplay");
-    if (el) el.textContent = `Ping: ${ms} ms`;
+    if (el) el.textContent = `${ms} ms`;
 }
 
 // Send a ping every 5 seconds
 function startPing() {
     if (pingInterval) clearInterval(pingInterval);
+    if (!isLoggedIn) return; // Only start pinging if logged in
     pingInterval = setInterval(() => {
         if (mainServer.readyState === WebSocket.OPEN) {
             lastPingTimestamp = Date.now();
-            mainServer.send("__ping__");
+            mainServer.send(JSON.stringify({type: "__ping__", session_token: sessionToken}));
         }
     }, 5000);
 }
@@ -567,57 +697,19 @@ mainServer.onclose = function(event) {
     console.log("Disconnected from server.");
     updatePingDisplay("--");
     if (pingInterval) clearInterval(pingInterval);
+    // Try to reconnect after a delay
+    setTimeout(() => {
+        if (!isSocketConnected) {
+            console.log("Attempting to reconnect...");
+            mainServer = new WebSocket("wss://vocapepper.com:9601");
+        }
+    }, 5000);
 };
 
 mainServer.onerror = function(event) {
     console.error("Connection error occurred!", event);
     updateChatLog("<span class='action'>Connection error occurred!</span>");
     render();
-};
-
-mainServer.onmessage = function(event) {
-    let data;
-    try {
-        data = JSON.parse(event.data);
-    } catch {
-        console.log(event.data);
-        return;
-    }
-    // Ignore "__pong__" messages (don't show in battlelog)
-    if (data.message === "__pong__") {
-        // Optionally, update ping display here if you want to measure latency
-        if (typeof lastPingTimestamp !== "undefined" && lastPingTimestamp > 0) {
-            const latency = Date.now() - lastPingTimestamp;
-            updatePingDisplay(latency);
-        }
-        return;
-    }
-    if (data.type === "merged_seen_tiles" && data.seenTiles && data.floor === floor) {
-        // Merge received seenTiles with local seenTiles
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
-                if (data.seenTiles[y][x]) seenTiles[y][x] = true;
-            }
-        }
-        drawMinimap();
-        return;
-    }
-    // Handle player positions update
-    if (data.type === "player_positions" && data.positions && data.floor === floor) {
-        otherPlayers = data.positions;
-        drawMinimap();
-        return;
-    }
-    // Handle map update
-    if (data.type === "map_update") {
-        handleIncomingMap(data);
-        return;
-    }
-    // Handle chat messages
-    if (data.message) {
-        console.log(`${data.timestamp} ${data.message}`);
-        updateChatLog(`<span class='chat'>${data.message}</span>`);
-    }
 };
 
 function sendPlayerPosition() {
@@ -1112,48 +1204,6 @@ function sendSeenTiles() {
             }
         }
 
-        function explodePath() {
-            let xMin = player.x, xMax = player.x,
-                yMin = player.y, yMax = player.y;
-
-            switch (DIRECTIONS[player.dir]) {
-                case 'N':
-                    xMin--;
-                    xMax++;
-                    yMin -= 3;
-                    break;
-                case 'E':
-                    yMin--;
-                    yMax++;
-                    xMax += 3;
-                    break;
-                case 'S':
-                    xMin--;
-                    xMax++;
-                    yMax += 3;
-                    break;
-                case 'W':
-                    yMin--;
-                    yMax++;
-                    xMin -= 3;
-                    break;
-            }
-
-            for (let y=yMin; y<=yMax; y++) {
-                for (let x=xMin; x<=xMax; x++) {
-                    breakMap(x, y);
-                }
-            }
-
-            mainServer.send(JSON.stringify({
-                type: "explode_path",
-                x: player.x,
-                y: player.y,
-                dir: player.dir,
-                floor: floor
-            }));
-        }
-
         function breakMap(x, y) {
             if (coordsInBounds(x, y)) {
                 if (MAP[y][x] === '#') {
@@ -1306,126 +1356,6 @@ function sendSeenTiles() {
             }
         }
 
-        function generateMapAndSync() {
-            let attempts = 0; // Add a safeguard to prevent infinite recursion
-            do {
-                generateMap();
-                attempts++;
-                if (attempts > 100) {
-                    console.error("Failed to generate a valid map after 100 attempts!");
-                    break;
-                }
-            } while (!isValidMap()); // Replace with a function that checks if the map is valid
-            sendMapToServer();
-        }
-
-        window.generateMap = generateMapAndSync;
-        window.sendMapToServer = sendMapToServer;
-
-        function generateMap() {
-            if (!MAP || !MAP.length) return;
-            setExitPosition();
-
-            // Fill in walls
-            for (let y = 0; y < HEIGHT; y++) {
-                MAP[y] = [];
-                for (let x = 0; x < WIDTH; x++) {
-                    MAP[y][x] = '#';
-                    seenTiles[y][x] = false;
-                }
-            }
-
-            // Carve out a path
-            let position = { x: player.x, y: player.y };
-            let stack = null;
-            do {
-                stack = carvePath([position]);
-            } while (stack === null);
-
-            for (let i in stack) {
-                MAP[stack[i].y][stack[i].x] = '.';
-            }
-
-            for (let i = 0; i < 10; i++) {
-                dissolveMap();
-            }
-
-            MAP[player.y][player.x] = '.';
-            MAP[exit.y][exit.x] = 'E';
-
-            // 100% chance to spawn merchant on floor 1
-            if (floor === 1) {
-                merchant.isActiveOnFloor = merchant.isAlive;
-            } else {
-                merchant.isActiveOnFloor = merchant.isAlive && Math.random() < 0.25;
-            }
-
-            if (merchant.isActiveOnFloor) {
-                setMerchant();
-            }
-
-            gambler.isActiveOnFloor = gambler.isAlive && Math.random() < 0.25;
-            if (gambler.isActiveOnFloor) {
-                setGambler();
-            }
-
-            // Spawn treasure chests
-            spawnTreasureChests();
-
-            // Spawn healing tiles
-            spawnHealingTiles();
-        }
-
-        function spawnTreasureChests() {
-            const chestCount = Math.floor(Math.random() * 4) + 1; // 1 to 4 chests
-            let attempts = 0;
-
-            for (let i = 0; i < chestCount; i++) {
-                while (attempts++ < 1000) {
-                    const x = Math.floor(Math.random() * WIDTH);
-                    const y = Math.floor(Math.random() * HEIGHT);
-
-                    const isEmptySpace =
-                        MAP[y][x] === '.' &&
-                        (y !== exit.y || x !== exit.x) &&
-                        (y !== player.y || x !== player.x) &&
-                        !isMerchantTile(x, y) &&
-                        !isGamblerTile(x, y);
-
-                    if (isEmptySpace) {
-                        const isMimic = Math.random() < 0.2; // 20% chance for mimic
-                        MAP[y][x] = isMimic ? 'M' : 'T'; // 'M' for mimic, 'T' for normal chest
-                        break;
-                    }
-                }
-            }
-        }
-
-        function spawnHealingTiles() {
-            const healingTileCount = Math.floor(Math.random() * 6) + 1; // 1 to 6 healing tiles
-            let attempts = 0;
-
-            for (let i = 0; i < healingTileCount; i++) {
-                while (attempts++ < 1000) {
-                    const x = Math.floor(Math.random() * WIDTH);
-                    const y = Math.floor(Math.random() * HEIGHT);
-
-                    const isEmptySpace =
-                        MAP[y][x] === '.' &&
-                        (y !== exit.y || x !== exit.x) &&
-                        (y !== player.y || x !== player.x) &&
-                        !isMerchantTile(x, y) &&
-                        !isGamblerTile(x, y) &&
-                        MAP[y][x] !== 'T'; // Ensure no overlap with treasure chests
-
-                    if (isEmptySpace) {
-                        MAP[y][x] = 'H'; // Place a healing tile
-                        break;
-                    }
-                }
-            }
-        }
-
         function interactWithChest(x, y) {
             const tile = MAP[y][x];
 
@@ -1461,32 +1391,6 @@ function sendSeenTiles() {
         function getRandomMerchantItem() {
             const availableItems = Object.keys(items).filter(itemId => items[itemId].merchantStockChance > 0);
             return availableItems[Math.floor(Math.random() * availableItems.length)];
-        }
-
-        function setExitPosition() {
-            const margin = 2;
-            const possiblePositions = [['x', 'y'], ['x'], ['y']];
-            const positions = possiblePositions[
-                Math.floor(Math.random() * possiblePositions.length)
-            ];
-
-            for (let p in positions) {
-                if (positions[p] === 'x') {
-                    const exitOffsetX = Math.round(Math.random() * Math.round(WIDTH / 10));
-                    if (player.x < WIDTH / margin) {
-                        exit.x = WIDTH - margin - exitOffsetX;
-                    } else {
-                        exit.x = margin + exitOffsetX;
-                    }
-                } else {
-                    const exitOffsetY = Math.round(Math.random() * Math.round(HEIGHT / 10));
-                    if (player.y < HEIGHT / margin) {
-                        exit.y = HEIGHT - margin - exitOffsetY;
-                    } else {
-                        exit.y = margin + exitOffsetY;
-                    }
-                }
-            }
         }
 
         function setMerchant() {
@@ -1546,88 +1450,6 @@ function sendSeenTiles() {
             // If we couldn't place the gambler, don't activate the gambler
             console.warn(`Unable to place the gambler after ${attempts} attempts. The gambler will be deactivated for this floor`);
             gambler.isActiveOnFloor = false;
-        }
-
-        function carvePath(stack) {
-            const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
-            const step = Math.random() < 0.5 ? -1 : 1;
-            let lastPosition = stack[stack.length - 1];
-
-            for (let i=0; i<2; i++) {
-                const nextPosition = {
-                    x: lastPosition.x + (direction === 'horizontal' ? step : 0),
-                    y: lastPosition.y + (direction === 'vertical' ? step : 0),
-                };
-
-                const atMapEdge =
-                    nextPosition.x === 0 ||
-                    nextPosition.y === 0 ||
-                    nextPosition.x === WIDTH - 1 ||
-                    nextPosition.y === HEIGHT - 1;
-
-                if (atMapEdge) {
-                    return null;
-                }
-
-                const alreadyVisited = stack.find((cell) =>
-                    cell.x === nextPosition.x && cell.y === nextPosition.y
-                );
-                if (alreadyVisited) {
-                    return null;
-                }
-
-                stack.push(nextPosition);
-
-                const reachedEnd =
-                    nextPosition.x === exit.x &&
-                    nextPosition.y === exit.y;
-
-                if (reachedEnd) {
-                    return stack;
-                }
-
-                lastPosition = nextPosition;
-            }
-
-            let result;
-            for (let i=0; i<100; i++) {
-                result = carvePath(stack);
-                if (result) {
-                    break;
-                }
-            }
-
-            return result;
-        }
-
-        function dissolveMap() {
-            let dissolvePoints = [];
-            for (let y = 2; y < HEIGHT - 2; y++) {
-                for (let x = 2; x < WIDTH - 2; x++) {
-                    const isDissolvePoint = MAP[y][x] === '#' && (
-                        (MAP[y - 1][x] === '#' ? 1 : 0) +
-                        (MAP[y + 1][x] === '#' ? 1 : 0) +
-                        (MAP[y][x - 1] === '#' ? 1 : 0) +
-                        (MAP[y][x + 1] === '#' ? 1 : 0)
-                    ) === 3;
-
-                    if (isDissolvePoint) {
-                        dissolvePoints.push({x, y});
-                    }
-                }
-            }
-
-            const totalPointsToDissolve = Math.floor(dissolvePoints.length / 2);
-            if (totalPointsToDissolve < 1) {
-                return;
-            }
-
-            for (let i = 0; i < totalPointsToDissolve; i++) {
-                const index = Math.floor(Math.random() * dissolvePoints.length);
-                const dissolvePoint = dissolvePoints[index];
-                MAP[dissolvePoint.y][dissolvePoint.x] = '.';
-                dissolvePoints = dissolvePoints.splice(index, 1);
-            }
         }
 
         function updateSeenTiles() {
@@ -2422,7 +2244,7 @@ __\\_______^/
         if (e.key === "Enter") {
             const message = e.target.value;
             updateChatLog(`YOU: "${message}"`);
-            mainServer.send(message);
+            sendToServer({ type: "chat", message }); // Use the wrapper to include session_token
             e.target.value = "";
             awaitingPersuasionText = false;
             render();
@@ -3434,6 +3256,7 @@ You found a treasure chest! Do you want to open it?
     `
 
 
+
        _,-.-.
       (_;.   \`-.
       (__:
@@ -3619,7 +3442,6 @@ You found a treasure chest! Do you want to open it?
         ['█▀▀▀ ', '▀▀▀▄ ', '▀▄▄▀ '], // 5
         ['▄▀▀▀ ', '█▀▀▄ ', '▀▄▄▀ '], // 6
     ];
-
     // Touch Controls
     function openControl(getID)
     {
@@ -3647,7 +3469,153 @@ You found a treasure chest! Do you want to open it?
                 openControl('mobile-controls');
             }
         });
-    </script>
+
+    // ===== LOGIN MODAL =====
+    let sessionToken = null;
+    let isLoggedIn = false;
 
 
+    function showLoginModal() {
+      loginModal.style.display = 'flex';
+    }
+    function hideLoginModal() {
+      loginModal.style.display = 'none';
+    }
+
+    // ===== BLOCK GAME UNTIL LOGIN =====
+    function blockGameUntilLogin() {
+      isLoggedIn = false;
+      showLoginModal();
+      if (pingInterval) clearInterval(pingInterval); // Stop pinging when logged out
+    }
+    function allowGameAfterLogin() {
+      isLoggedIn = true;
+      hideLoginModal();
+      startPing(); // Start pinging after login
+    }
+
+    blockGameUntilLogin();
+
+    // ===== LOGIN/REGISTER LOGIC =====
+    function sendLoginOrRegister(isRegister) {
+        if (!isSocketConnected || mainServer.readyState !== WebSocket.OPEN) {
+            document.getElementById('loginError').textContent = 'Not connected to server. Please try again.';
+            return;
+        }
+
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        
+        if (!username || !password) {
+            document.getElementById('loginError').textContent = 'Please enter both username and password.';
+            return;
+        }
+
+        try {
+            document.getElementById('loginError').textContent = '...';
+            const payload = isRegister ? 
+                {type: 'register', username, password} : 
+                {type: 'login', username, password};
+            mainServer.send(JSON.stringify(payload));
+        } catch (error) {
+            console.error('Error sending login/register request:', error);
+            document.getElementById('loginError').textContent = 'Error sending request. Please try again.';
+        }
+    }
+
+    document.getElementById('loginButton').onclick = function() { 
+        sendLoginOrRegister(false); 
+        // Clear the input fields after attempting to log in
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+    };
+
+    document.getElementById('registerButton').onclick = function() { 
+        sendLoginOrRegister(true); 
+        // Clear the input fields after attempting to register
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+    };
+
+    document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            sendLoginOrRegister(false);
+            // Clear the input fields after pressing Enter
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+    });
+
+    document.getElementById('loginUsername').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+    });
+
+    // ===== LOGOUT FUNCTION =====
+    function logout() {
+      if (sessionToken) {
+        mainServer.send(JSON.stringify({type: 'logout', session_token: sessionToken}));
+      }
+      sessionToken = null;
+      isLoggedIn = false;
+      blockGameUntilLogin();
+    }
+
+    // ===== WRAPPER FOR SENDING JSON WITH SESSION TOKEN =====
+    function sendToServer(obj) {
+      if (!isLoggedIn || !sessionToken) {
+        // Block sending if not logged in
+        return;
+    }
+      if (typeof obj === 'object' && obj !== null) {
+        obj.session_token = sessionToken;
+        mainServer.send(JSON.stringify(obj));
+      }
+    }
+    // ===== PATCH ALL OUTGOING JSON SENDS =====
+function sendPlayerPosition() {
+      sendToServer({
+            type: "player_position",
+            x: player.x,
+            y: player.y,
+            floor: floor
+      });
+}
+function sendSeenTiles() {
+      sendToServer({
+            type: "seen_tiles",
+            seenTiles: seenTiles,
+            floor: floor
+      });
+    }
+    function sendMapToServer() {
+      sendToServer({
+        type: "map_update",
+        map: MAP,
+        floor: floor,
+        exit: exit
+      });
+    }
+    function requestMapFromServer() {
+      sendToServer({ type: "request_map", floor: floor });
+    }
+    // Patch C4/explode_path
+    function useC4() {
+      playSFX('explosion');
+      if (player.inCombat) {
+        const dmg = Math.max(20, Math.round(Math.random() * 10) * 5);
+        currentEnemy.hp -= dmg;
+        updateBattleLog(`You exploded the shit out of <span class="action">${currentEnemy.name}</span> for <span class="HP">${dmg} HP</span>!!!`);
+        endOfPlayerTurn();
+      } else {
+        sendToServer({
+          type: "explode_path",
+          x: player.x,
+          y: player.y,
+          dir: player.dir,
+          floor: floor
+        });
+        updateBattleLog('<span class="action">KABOOM!</span> The dungeon walls crumble like charred toast!');
+      }
+    }
+</script>
 </body></html>
