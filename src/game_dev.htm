@@ -2244,7 +2244,7 @@ __\\_______^/
         if (e.key === "Enter") {
             const message = e.target.value;
             updateChatLog(`YOU: "${message}"`);
-            sendToServer({ type: "chat", message }); // Use the wrapper to include session_token
+            sendToServer({ type: message.startsWith("/") ? "command" : "chat", message }); // Use the wrapper to include session_token
             e.target.value = "";
             awaitingPersuasionText = false;
             render();
@@ -2478,7 +2478,7 @@ __\\_______^/
 
         document.addEventListener('keydown', e => {
             if (player.inputDisabled || gameOver || awaitingPersuasionText) {
-                return;
+                return; // Prevent any input if player input is disabled
             }
 
             const key = e.key.toLowerCase();
@@ -3485,11 +3485,13 @@ You found a treasure chest! Do you want to open it?
     // ===== BLOCK GAME UNTIL LOGIN =====
     function blockGameUntilLogin() {
       isLoggedIn = false;
+      player.inputDisabled = true; // Disable player input
       showLoginModal();
       if (pingInterval) clearInterval(pingInterval); // Stop pinging when logged out
     }
     function allowGameAfterLogin() {
       isLoggedIn = true;
+      player.inputDisabled = false; // Enable player input
       hideLoginModal();
       startPing(); // Start pinging after login
     }
@@ -3562,14 +3564,18 @@ You found a treasure chest! Do you want to open it?
 
     // ===== WRAPPER FOR SENDING JSON WITH SESSION TOKEN =====
     function sendToServer(obj) {
-      if (!isLoggedIn || !sessionToken) {
-        // Block sending if not logged in
-        return;
-    }
-      if (typeof obj === 'object' && obj !== null) {
-        obj.session_token = sessionToken;
-        mainServer.send(JSON.stringify(obj));
-      }
+        if (!isLoggedIn || !sessionToken) {
+            // Block sending if not logged in
+            return;
+        }
+        if (typeof obj === 'object' && obj !== null) {
+            obj.session_token = sessionToken;
+            // Check if the object is a command
+            if (obj.type === "chat" && obj.message.startsWith("/")) {
+                obj.type = "command"; // Change type to command if it's a command message
+            }
+            mainServer.send(JSON.stringify(obj));
+        }
     }
     // ===== PATCH ALL OUTGOING JSON SENDS =====
 function sendPlayerPosition() {
