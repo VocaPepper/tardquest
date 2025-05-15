@@ -706,6 +706,19 @@ let lastPingTimestamp = 0;
 let pingInterval = null;
 let isSocketConnected = false;
 
+// Utility functions for cookies
+function setCookie(name, value, days = 7) {
+    const expires = new Date(Date.now() + days*24*60*60*1000).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+}
+function deleteCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
 // Only assign handlers inside this function!
 function connectToServer() {
     const selectedChannel = document.getElementById('channelSelect').value;
@@ -843,6 +856,7 @@ function connectToServer() {
         if (data.type === 'login_result' || data.type === 'register_result') {
             if (data.success) {
                 sessionToken = data.session_token;
+                setCookie('sessionToken', sessionToken); // <-- Save to cookie
                 allowGameAfterLogin();
                 document.getElementById('loginError').textContent = '';
                 updateChatLog(`<span class='chat'>${data.message}</span>`); // Show login/register success in chatlog
@@ -2034,6 +2048,8 @@ __\\_______^/
             if (player.hp <= 0) {
                 output += `\nGood job! <span class="action">You died</span> on <span class="action">floor ${floor}</span>`;
                 gameOver = true;
+                // Notify the server that the player is being revived/refilled
+                sendToServer({ type: "use_item", itemId: "healingTile" });
                 setTimeout(() => window.location.href = "../index.html", 5000);
             }
 
@@ -3505,9 +3521,8 @@ You found a treasure chest! Do you want to open it?
         });
 
     // ===== LOGIN MODAL =====
-    let sessionToken = null;
+    let sessionToken = getCookie('sessionToken');
     let isLoggedIn = false;
-
 
     function showLoginModal() {
       loginModal.style.display = 'flex';
@@ -3519,10 +3534,13 @@ You found a treasure chest! Do you want to open it?
     // ===== BLOCK GAME UNTIL LOGIN =====
     function blockGameUntilLogin() {
       isLoggedIn = false;
-      player.inputDisabled = true; // Disable player input
-      showLoginModal();
+      player.inputDisabled = true;
+      if (!getCookie('sessionToken')) {
+        showLoginModal();
+      }
       if (pingInterval) clearInterval(pingInterval); // Stop pinging when logged out
     }
+
     function allowGameAfterLogin() {
       isLoggedIn = true;
       player.inputDisabled = false; // Enable player input
@@ -3531,7 +3549,46 @@ You found a treasure chest! Do you want to open it?
       sendToServer({ type: "request_stats" });
     }
 
-    blockGameUntilLogin();
+    // ===== AUTO-LOGIN IF COOKIE EXISTS =====
+    if (sessionToken) {
+      // Always disable input and hide game UI until validated
+      isLoggedIn = false;
+      player.inputDisabled = true;
+      document.getElementById('game').classList.add('hidden');
+      document.getElementById('menu').classList.add('hidden');
+      // Try to validate the session token with the server
+      function handleValidationResponse(event) {
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        if (data.type === "validate_session") {
+          if (data.success) {
+            allowGameAfterLogin();
+            document.getElementById('game').classList.remove('hidden');
+          } else {
+            sessionToken = null;
+            deleteCookie('sessionToken');
+            showLoginModal();
+          }
+          mainServer.removeEventListener('message', handleValidationResponse);
+        }
+      }
+      function tryValidate() {
+        if (mainServer && mainServer.readyState === WebSocket.OPEN) {
+          mainServer.addEventListener('message', handleValidationResponse);
+          mainServer.send(JSON.stringify({ type: "validate_session", session_token: sessionToken }));
+        } else {
+          setTimeout(tryValidate, 100);
+        }
+      }
+      tryValidate();
+    } else {
+      blockGameUntilLogin();
+      showLoginModal();
+    }
 
     // ===== LOGIN/REGISTER LOGIC =====
     function sendLoginOrRegister(isRegister) {
@@ -3597,6 +3654,7 @@ You found a treasure chest! Do you want to open it?
       }
       sessionToken = null;
       isLoggedIn = false;
+      deleteCookie('sessionToken'); // <-- Clear cookie
       blockGameUntilLogin();
     }
 
