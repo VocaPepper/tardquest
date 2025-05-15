@@ -232,12 +232,6 @@
             top: 420px;
             left: 315px;
         }
-        input:focus,
-        select:focus,
-        textarea:focus,
-        button:focus {
-            outline: none;
-        }
 
         .menus {
             position: absolute;
@@ -388,7 +382,7 @@
             padding: 10px;
             color: #fff;
             border: 2px solid #fff;
-            font-size: 15px;
+            font-size: 16px;
             text-overflow: ellipsis;
             word-wrap: break-word;
             white-space: pre-wrap;
@@ -433,13 +427,25 @@
         #pingDisplay {
             font-family:monospace;
             color: #fff;
-            font-size: 15px;
+            font-size: 16px;
+        }
+        #loginModal {
+            position:fixed;
+            top:0;
+            left:0;
+            width:960px;
+            height:650px;
+            background:rgba(0,0,0,0.8);
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            z-index:9999;
         }
         #loginModal input {
             color: white;
             border: none;
             font-size: 15px;
-            width: 200px;
+            width: 100px;
             height: 25px;
             z-index: 9;
             font-family: monospace;
@@ -454,13 +460,13 @@
         }
         #loginModal button {
             font-family: monospace;
-            background: #000;
-            color: #fff;
-            border: 2px solid #fff;
+            background: #fff;
+            color: #000;
+            border: 2px solid #000;
             padding: 10px;
-            font-size: 15px;
+            font-size: 16px;
             border-radius: 0px;
-            width: 225px;
+            width: auto;
             height: 50px;
             text-align: center;
             touch-action: manipulation;
@@ -468,7 +474,120 @@
             cursor: pointer;
         }
         #loginModal button:hover {
-            background: #222;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+        }
+        #loginBox {
+            width: 480px;
+            height: 240px;
+            margin: 0 auto;
+            padding: 10px;
+            background: #000;
+            border-radius: 0px;
+            border:2px solid #fff;
+            box-shadow:0 0 32px #000;
+        }            
+        input:focus,
+        select:focus,
+        textarea:focus,
+        button:focus {
+            outline: none;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 50px;
+            height: 15px;
+            background: #000;
+            border-radius: 0px;
+            outline: none;
+            padding: 0;
+            margin: 0 8px;
+            box-sizing: border-box;
+            /* Match .button font */
+            font-family: monospace;
+            /* For vertical alignment */
+            vertical-align: middle;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 15px;
+            background: #fff;
+            border: 2px solid #fff;
+            border-radius: 0;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: -4px;
+        }
+        input[type="range"]:focus::-webkit-slider-thumb {
+            background: #ccc;
+            border: 2px solid #fff;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 10px;
+            height: 15px;
+            background: #fff;
+            border-radius: 0px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        input[type="range"]:focus::-moz-range-thumb {
+            background: #ccc;
+            border: 2px solid #fff;
+        }
+        input[type="range"]::-ms-thumb {
+            background: #fff;
+            border-radius: 0px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        input[type="range"]:focus::-ms-thumb {
+            width: 10px;
+            height: 15px;
+            background: #ccc;
+            border: 2px solid #fff;
+        }
+        /* Track styles */
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 10px;
+            background: #000;
+            border-radius: 0px;
+            border: 2px solid #fff; 
+        }
+        input[type="range"]::-ms-fill-lower,
+        input[type="range"]::-ms-fill-upper {
+            background: #000;
+            border-radius: 0px;
+            border: 2px solid #fff; 
+        }
+        input[type="range"]::-moz-range-track {
+            height: 5px;
+            background: #000;
+            border-radius: 0px;
+            border: 2px solid #fff;            
+        }
+        /* Remove outline in Firefox */
+        input[type="range"]::-moz-focus-outer {
+            border: 0;
+        }
+
+        .channel-selector {
+            font-family: monospace;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            font-size: 10px;
+            border-radius: 0px;
+            width: auto;
+            height: 25px;
+            text-align: center;
+            touch-action: manipulation;
         }
   </style>
 </head>
@@ -511,7 +630,7 @@
     <!-- Start Mobile Control Patches-->
     <div id="chatLog"></div>
     <div id="typeMessage"><input type="text" id="chatInput" onclick="focusChat();" placeholder="Click here to chat..."></div>
-    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" onclick="logout();">LOGOUT</a> <!-- <a href="#" onclick="menu.open('merchant');">FORCE MERCHANT</a> <a href="#" onclick="menu.open('gambler');">FORCE GAMBLER</a> <a href="#" onclick="spawnTreasureChests();">SPAWN CHEST</a> --> <a href="#" style="text-decoration: none; position: absolute; right: 10px;" id="pingDisplay">-- ms</a></div>
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a> <a href="#" onclick="logout();">LOGOUT</a> <span>VOLUME:<input type="range" id="volumeSlider" min="0" max="100" value="50" style="vertical-align:middle;"></span> <a href="#" style="text-decoration: none; position: absolute; right: 10px;" id="pingDisplay">-- ms</a></div>
     <div id="mobile-controls" style="visibility: hidden;">
             <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>            
@@ -568,105 +687,148 @@
     </div>
     <!-- End Mobile Control Patches-->
   </div>
-  <div id="loginModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;">
-    <div style="background:#000;padding:32px 48px;border:2px solid #fff;box-shadow:0 0 32px #000;display:flex;flex-direction:column;align-items:center;">
-      <h2 style="color:#fff;margin-bottom:16px;">Login to TARDQUEST</h2>
-      <input id="loginUsername" type="text" placeholder="Username">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <button id="loginButton">Login</button>
-      <button id="registerButton">Register</button>
-      <div id="loginError" style="color:#f44;margin-top:12px;min-height:24px;"></div>
+  <div id="loginModal">
+    <div id="loginBox">
+      <h2 style="text-align: center;">TARDQUEST ONLINE</h2>
+        <center><a>Server Channel:</a> <select class="channel-selector" id="channelSelect">
+            <option value="wss://vocapepper.com:9600">CH.0 "Genesis"</option>
+            <option value="wss://vocapepper.com:9601">CH.1 "Aetherion"</option>
+            <option value="wss://vocapepper.com:9602">CH.2 "Stormfrost"</option>
+            <option value="wss://vocapepper.com:9603">CH.3 "Emberfall"</option>
+        </select></center>
+      <center><input id="loginUsername" type="text" placeholder="Username"><input id="loginPassword" type="password" placeholder="Password"> <button id="loginButton">Login</button> <button id="registerButton">Register</button></center>     
+      <div id="loginError" style="color:#f44;min-height:24px; text-align: center;"></div>
     </div>
   </div>
 <script>
-const mainServer = new WebSocket("wss://vocapepper.com:9601"); // Change this to your server address
-
+let mainServer; // Declare mainServer without initializing it yet
 let lastPingTimestamp = 0;
 let pingInterval = null;
 let isSocketConnected = false;
 
-// Handle server responses
-mainServer.onmessage = function(event) {
-  let data;
-  try {
-    data = JSON.parse(event.data);
-  } catch {
-    console.log(event.data);
-    return;
-  }
+// Only assign handlers inside this function!
+function connectToServer() {
+    const selectedChannel = document.getElementById('channelSelect').value;
+    mainServer = new WebSocket(selectedChannel);
 
-  // Handle ping response
-  if (data.type === "__pong__" || data.message === "__pong__") {
-    if (typeof lastPingTimestamp !== "undefined" && lastPingTimestamp > 0) {
-      const latency = Date.now() - lastPingTimestamp;
-      updatePingDisplay(latency);
-    }
-    return;
-  }
+    mainServer.onopen = function(event) {
+        isSocketConnected = true;
+        console.log("Connected to server.");
+        updateChatLog("<span class='action'>Connected to server.</span>");
+        startPing();
+    };
 
-  // Handle login/register result as JSON
-  if (data.type === 'login_result' || data.type === 'register_result') {
-    if (data.success) {
-      sessionToken = data.session_token;
-      allowGameAfterLogin();
-      document.getElementById('loginError').textContent = '';
-      updateChatLog(`<span class='chat'>${data.message}</span>`); // Show login/register success in chatlog
-      requestMapFromServer(); // Request the map after login
-    } else {
-      document.getElementById('loginError').textContent = data.message || 'Login/Register failed.';
-      updateChatLog(`<span class='chat'>${data.message || 'Login/Register failed.'}</span>`); // Show login/register error in chatlog
-      sessionToken = null;
-      blockGameUntilLogin();
-    }
-    return;
-  }
+    mainServer.onclose = function(event) {
+        isSocketConnected = false;
+        console.log("Disconnected from server.");
+        updatePingDisplay("--");
+        if (pingInterval) clearInterval(pingInterval);
+        // Try to reconnect after a delay
+        setTimeout(() => {
+            if (!isSocketConnected) {
+                console.log("Attempting to reconnect...");
+                connectToServer();
+            }
+        }, 5000);
+    };
 
-  // Handle map and player updates
-  if (data.type === "merged_seen_tiles" && data.seenTiles && data.floor === floor) {
-    for (let y = 0; y < HEIGHT; y++) {
-      for (let x = 0; x < WIDTH; x++) {
-        if (data.seenTiles[y][x]) seenTiles[y][x] = true;
-      }
-    }
-    drawMinimap();
-    return;
-  }
+    mainServer.onerror = function(event) {
+        console.error("Connection error occurred!", event);
+        updateChatLog("<span class='action'>Connection error occurred!</span>");
+        render();
+    };
 
-  if (data.type === "player_positions" && data.positions && data.floor === floor) {
-    otherPlayers = data.positions;
-    drawMinimap();
-    return;
-  }
+    mainServer.onmessage = function(event) {
+        let data;
+        try {
+            data = JSON.parse(event.data);
+        } catch {
+            console.log(event.data);
+            return;
+        }
 
-  if (data.type === "map_update") {
-    handleIncomingMap(data);
-    return;
-  }
+        // Handle ping response
+        if (data.type === "__pong__" || data.message === "__pong__") {
+            if (typeof lastPingTimestamp !== "undefined" && lastPingTimestamp > 0) {
+                const latency = Date.now() - lastPingTimestamp;
+                updatePingDisplay(latency);
+            }
+            return;
+        }
 
-  // Handle chat/action/error messages
-  if (data.type === "chat") {
-    updateChatLog(`<span class="player">${data.username || ''}</span>: ${data.message}`);
-    return;
-  }
+            if (data.type === "server_full") {
+            document.getElementById('loginError').textContent = data.message || "Server is full. Please try another channel or try again later.";
+            blockGameUntilLogin();
+            return;
+        }
 
-  if (data.type === "action") {
-    updateChatLog(`<span class="action">${data.message}</span>`);
-    return;
-  }
+        // Handle login/register result as JSON
+        if (data.type === 'login_result' || data.type === 'register_result') {
+            if (data.success) {
+                sessionToken = data.session_token;
+                allowGameAfterLogin();
+                document.getElementById('loginError').textContent = '';
+                updateChatLog(`<span class='chat'>${data.message}</span>`); // Show login/register success in chatlog
+                requestMapFromServer(); // Request the map after login
+            } else {
+                document.getElementById('loginError').textContent = data.message || 'Login/Register failed.';
+                updateChatLog(`<span class='chat'>${data.message || 'Login/Register failed.'}</span>`); // Show login/register error in chatlog
+                sessionToken = null;
+                blockGameUntilLogin();
+            }
+            return;
+        }
 
-  if (data.type === "error") {
-    updateChatLog(`<span class="error">${data.message}</span>`);
-    return;
-  }
+        // Handle map and player updates
+        if (data.type === "merged_seen_tiles" && data.seenTiles && data.floor === floor) {
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    if (data.seenTiles[y][x]) seenTiles[y][x] = true;
+                }
+            }
+            drawMinimap();
+            return;
+        }
 
-  // Fallback: log unknown message
-  if (data.message) {
-    console.log(`${data.timestamp || ''} ${data.message}`);
-    updateChatLog(`<span class='chat'>${data.message}</span>`);
-  } else {
-    console.log("Unknown message type:", data);
-  }
-};
+        if (data.type === "player_positions" && data.positions && data.floor === floor) {
+            otherPlayers = data.positions;
+            drawMinimap();
+            return;
+        }
+
+        if (data.type === "map_update") {
+            handleIncomingMap(data);
+            return;
+        }
+
+        // Handle chat/action/error messages
+        if (data.type === "chat") {
+            updateChatLog(`<span class="player">${data.username || ''}</span>: ${data.message}`);
+            return;
+        }
+
+        if (data.type === "action") {
+            updateChatLog(`<span class="action">${data.message}</span>`);
+            return;
+        }
+
+        if (data.type === "error") {
+            updateChatLog(`<span class="error">${data.message}</span>`);
+            return;
+        }
+
+        // Fallback: log unknown message
+        if (data.message) {
+            console.log(`${data.timestamp || ''} ${data.message}`);
+            updateChatLog(`<span class='chat'>${data.message}</span>`);
+        } else {
+            console.log("Unknown message type:", data);
+        }
+    };
+}
+
+// Initial connection
+connectToServer();
 
 function updatePingDisplay(ms) {
     const el = document.getElementById("pingDisplay");
@@ -684,33 +846,6 @@ function startPing() {
         }
     }, 5000);
 }
-
-mainServer.onopen = function(event) {
-    isSocketConnected = true;
-    console.log("Connected to server.");
-    updateChatLog("<span class='action'>Connected to server.</span>");
-    startPing();
-};
-
-mainServer.onclose = function(event) {
-    isSocketConnected = false;
-    console.log("Disconnected from server.");
-    updatePingDisplay("--");
-    if (pingInterval) clearInterval(pingInterval);
-    // Try to reconnect after a delay
-    setTimeout(() => {
-        if (!isSocketConnected) {
-            console.log("Attempting to reconnect...");
-            mainServer = new WebSocket("wss://vocapepper.com:9601");
-        }
-    }, 5000);
-};
-
-mainServer.onerror = function(event) {
-    console.error("Connection error occurred!", event);
-    updateChatLog("<span class='action'>Connection error occurred!</span>");
-    render();
-};
 
 function sendPlayerPosition() {
     if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
@@ -1300,6 +1435,20 @@ function sendSeenTiles() {
             ],
             current: null
         };
+
+        Object.values(sfx).forEach(audio => { audio.volume = 0.5; });
+        music.exploration.volume = 0.5;
+        music.battleTracks.forEach(track => { track.volume = 0.5; });
+
+        const volumeSlider = document.getElementById('volumeSlider');
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', function () {
+                const vol = volumeSlider.value / 100;
+                Object.values(sfx).forEach(audio => { audio.volume = vol; });
+                music.exploration.volume = vol;
+                music.battleTracks.forEach(track => { track.volume = vol; });
+            });
+        }
 
         music.exploration.loop = true;
         music.battleTracks.forEach(track => track.loop = true);
@@ -3306,7 +3455,7 @@ You found a treasure chest! Do you want to open it?
               ..__
     __________\`.  '-
    (___________ \`.  '-.
-    (______..--.
+    (__________
       (__)_||__|
         (_)_          _
            \`-_______-'
@@ -3318,7 +3467,7 @@ You found a treasure chest! Do you want to open it?
                 ..__
       __________\`.  '-
      (___________ \`.  '-.
-      (___/_/\\ ___.
+      (__________
        (__\\_\\/|   ||
          (____|___||    _
               \`-______-'
@@ -3526,6 +3675,7 @@ You found a treasure chest! Do you want to open it?
     }
 
     document.getElementById('loginButton').onclick = function() { 
+        playSFX('uiSelect');
         sendLoginOrRegister(false); 
         // Clear the input fields after attempting to log in
         document.getElementById('loginUsername').value = '';
@@ -3533,6 +3683,7 @@ You found a treasure chest! Do you want to open it?
     };
 
     document.getElementById('registerButton').onclick = function() { 
+        playSFX('uiSelect');
         sendLoginOrRegister(true); 
         // Clear the input fields after attempting to register
         document.getElementById('loginUsername').value = '';
@@ -3541,6 +3692,7 @@ You found a treasure chest! Do you want to open it?
 
     document.getElementById('loginPassword').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
+            playSFX('uiSelect');
             sendLoginOrRegister(false);
             // Clear the input fields after pressing Enter
             document.getElementById('loginUsername').value = '';
@@ -3623,5 +3775,14 @@ function sendSeenTiles() {
         updateBattleLog('<span class="action">KABOOM!</span> The dungeon walls crumble like charred toast!');
       }
     }
+
+    // Update the WebSocket connection when the channel changes
+    document.getElementById('channelSelect').addEventListener('change', function() {
+        if (mainServer) {
+            mainServer.close(); // Close the existing connection
+        }
+        blockGameUntilLogin();
+        connectToServer();
+    });
 </script>
 </body></html>
