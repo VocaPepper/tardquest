@@ -1211,22 +1211,6 @@ function updateInventoryUI() {
         let weapons = {};
         let armor = {};
 
-        function useC4() {
-            playSFX('explosion');
-
-            if (player.inCombat) {
-                const dmg = Math.max(20, Math.round(Math.random() * 10) * 5);
-                currentEnemy.hp -= dmg;
-                updateBattleLog(`You exploded the shit out of <span class="action">${currentEnemy.name}</span> for <span class="HP">${dmg} HP</span>!!!`);
-                endOfPlayerTurn();
-            } else {
-                sendToServer({
-                    type: "use_item",
-                    itemId: "brickOfC4"
-                });
-            }
-        }
-
         const sfx = {
             footstep: new Audio('https://files.catbox.moe/o0ka4u.wav'),
             turn: new Audio('https://files.catbox.moe/heur5b.wav'),
@@ -1348,70 +1332,6 @@ function updateInventoryUI() {
             sendToServer({ type: "use_item", itemId: "healingTile" });
             MAP[y][x] = '.';
             render();
-        }
-
-        function getRandomMerchantItem() {
-            const availableItems = Object.keys(items).filter(itemId => items[itemId].merchantStockChance > 0);
-            return availableItems[Math.floor(Math.random() * availableItems.length)];
-        }
-
-        function setMerchant() {
-            setMerchantWares();
-            setMerchantPosition();
-        }
-
-        function setMerchantPosition() {
-            let attempts = 0;
-
-            do {
-                const x = Math.floor(Math.random() * WIDTH);
-                const y = Math.floor(Math.random() * HEIGHT);
-
-                const isEmptySpace =
-                    MAP[y][x] === '.' &&
-                    (y !== exit.y && x !== exit.x) &&
-                    (y !== player.y && x !== player.x);
-
-                if (isEmptySpace) {
-                    merchant.x = x;
-                    merchant.y = y;
-                    return;
-                }
-            } while (attempts++ < 1000);
-
-            // If we couldn't place the merchant, don't activate the merchant
-            console.warn(`Unable to place the merchant after ${attempts} attempts. The merchant will be deactivated for this floor`);
-            merchant.isActiveOnFloor = false;
-        }
-
-        function setGambler() {
-            let attempts = 0;
-
-            do {
-                const x = Math.floor(Math.random() * WIDTH);
-                const y = Math.floor(Math.random() * HEIGHT);
-
-                const isMerchantSpace =
-                    merchant.isActiveOnFloor &&
-                    y === merchant.y &&
-                    x === merchant.x;
-
-                const isEmptySpace =
-                    MAP[y][x] === '.' &&
-                    (y !== exit.y && x !== exit.x) &&
-                    (y !== player.y && x !== player.x) &&
-                    !isMerchantSpace;
-
-                if (isEmptySpace) {
-                    gambler.x = x;
-                    gambler.y = y;
-                    return;
-                }
-            } while (attempts++ < 1000);
-
-            // If we couldn't place the gambler, don't activate the gambler
-            console.warn(`Unable to place the gambler after ${attempts} attempts. The gambler will be deactivated for this floor`);
-            gambler.isActiveOnFloor = false;
         }
 
         function updateSeenTiles() {
@@ -2257,6 +2177,19 @@ __\\_______^/
             // Prevent double-use by disabling input until server responds
             player.inputDisabled = true;
             sendToServer({ type: "use_item", itemId: itemName });
+
+            if (itemName === "brickOfC4") {
+                sendToServer({
+                    type: "use_item",
+                    itemId: itemName,
+                    x: player.x,
+                    y: player.y,
+                    dir: player.dir,
+                    floor: floor
+                });
+            } else {
+                sendToServer({ type: "use_item", itemId: itemName });
+            }
         }
 
         function buyItem(itemName, price) {
@@ -3556,25 +3489,6 @@ function sendSeenTiles() {
     }
     function requestMapFromServer() {
       sendToServer({ type: "request_map", floor: floor });
-    }
-    // Patch C4/explode_path
-    function useC4() {
-      playSFX('explosion');
-      if (player.inCombat) {
-        const dmg = Math.max(20, Math.round(Math.random() * 10) * 5);
-        currentEnemy.hp -= dmg;
-        updateBattleLog(`You exploded the shit out of <span class="action">${currentEnemy.name}</span> for <span class="HP">${dmg} HP</span>!!!`);
-        endOfPlayerTurn();
-      } else {
-        sendToServer({
-          type: "explode_path",
-          x: player.x,
-          y: player.y,
-          dir: player.dir,
-          floor: floor
-        });
-        updateBattleLog('<span class="action">KABOOM!</span> The dungeon walls crumble like charred toast!');
-      }
     }
 
     // Update the WebSocket connection when the channel changes
