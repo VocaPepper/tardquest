@@ -719,6 +719,10 @@ function deleteCookie(name) {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 }
 
+function requestBitcoinsFromServer() {
+    sendToServer({ type: "get_bitcoins" });
+}
+
 // Only assign handlers inside this function!
 function connectToServer() {
     const selectedChannel = document.getElementById('channelSelect').value;
@@ -852,6 +856,13 @@ function connectToServer() {
             return;
         }
 
+        if (data.type === "update_bitcoins") {
+            player.bitcoins = data.bitcoins; // Always update from server
+            updateInventoryUI();
+            render();
+            return;
+        }
+
         // Handle login/register result as JSON
         if (data.type === 'login_result' || data.type === 'register_result') {
             if (data.success) {
@@ -891,8 +902,8 @@ function connectToServer() {
             return;
         }
         if (data.type === "update_bitcoins") {
-            player.bitcoins = data.bitcoins;
-            updateBitcoinsUI();
+            player.bitcoins = data.bitcoins; // Always update from server
+            updateInventoryUI();
             render();
             return;
         }
@@ -1986,11 +1997,6 @@ __\\_______^/
             `;
             document.getElementById('stats2').innerHTML = stats2Html;    
 
-            if (player.levelingUp) {
-                menu.open("levelUp");
-                return;
-            }
-
             if (player.inCombat) {
                 output += `${getEnemyArt()}`;
 
@@ -2558,7 +2564,8 @@ __\\_______^/
             } else if (tile === 'T') {
                 sendToServer({
                     type: "open_chest",
-                    chestId: x + "," + y
+                    chestId: x + "," + y,
+                    floor: player.floor
                 });
             }
 
