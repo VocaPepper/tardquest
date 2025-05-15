@@ -23,8 +23,8 @@ As this is in very early development stages there may be critical bugs during ga
 - Items may not display in the Merchant menu
 - Gambler will spawn regardless of BTC owned
 - Maps may not generate correctly (adjusting map logic as I go)
-- C4 only targets upper left of map
-- Treasure Chest rewards are not distributed to player (coordinates are not parsed correctly)
+- ~~C4 only targets upper left of map~~ <sup>Fixed</sup>
+- ~~Treasure Chest rewards are not distributed to player~~ <sup>Fixed</sup>
 - Touch Controls may not work as intended on Multiplayer client
 
 # [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
