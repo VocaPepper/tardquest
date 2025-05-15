@@ -159,6 +159,7 @@
             padding: 5px;
             overflow: hidden; 
             font-size: 18px;
+            font-weight: bold;
             gap: 7px;
             text-align: left;
             line-height: 1.1;
@@ -172,11 +173,10 @@
             left: 620px;
             padding: 5px;
             overflow: hidden; 
-            font-size: 10px;
+            font-size: 13px;
             font-weight: bold;
             gap: 7px;
-            text-align: left;
-            line-height: 1.02;
+            line-height: 1.0;
         }
 
         #battleLog,
@@ -952,6 +952,14 @@ function connectToServer() {
             return;
         }
 
+        if (data.type === "item_data") {
+            items = data.items || {};
+            weapons = data.weapons || {};
+            armor = data.armor || {};
+            render();
+            return;
+        }
+
         // Fallback: log unknown message
         if (data.message) {
             console.log(`${data.timestamp || ''} ${data.message}`);
@@ -1010,18 +1018,13 @@ function updateInventoryUI() {
     } else {
         html += '<ul style="margin:0 0 0 10px;padding:0;list-style:none;">';
         for (const key of itemNames) {
-            html += `<li>${key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}: <span style='color:#FAEB4A'>${inv[key]}</span></li>`;
+            html += `<li>${items[key]?.name || key}: <span style='color:#FAEB4A'>${inv[key]}</span></li>`;
         }
         html += '</ul>';
     }
     // Also show bitcoins
     html += `<br><strong>BTC:</strong> <span style='color:#FAEB4A'>${player.bitcoins}</span>`;
     controls.innerHTML = html;
-}
-
-function updateBitcoinsUI() {
-    // Just call updateInventoryUI to refresh BTC display
-    updateInventoryUI();
 }
         const
             WIDTH = 30,
@@ -1036,7 +1039,7 @@ function updateBitcoinsUI() {
         const player = {
             x: 1,
             y: 1,
-            bitcoins: 0,
+            bitcoins: {},
             dir: 0,
             inCombat: false,
             levelingUp: false,
@@ -1204,183 +1207,9 @@ function updateBitcoinsUI() {
           "got bored and jumped down a 'bottomless' hole. You heard a scream, and the sound was absolutely not faint."
         ];
 
-        const weapons = {
-            pointyStick: {
-                name: "POINTY STICK",
-                description: "A stick that fell off of a tree somewhere",
-                damage: {
-                    base: 2,
-                    randomMultiplier: 5,
-                },
-                price: 20,
-            },
-            wiffleBallBat: {
-                name: "WIFFLE BALL BAT",
-                description: "A hollow bat made of plastic",
-                damage: {
-                    base: 3,
-                    randomMultiplier: 6,
-                },
-                price: 50,
-            },
-            nunchucks: {
-                name: "NUNCHUCKS",
-                description: "Two pieces of wood connected by a chain",
-                damage: {
-                    base: 6,
-                    randomMultiplier: 9,
-                },
-                price: 100,
-            },
-            atlatlSpear: {
-                name: "ATLATL SPEAR",
-                description: "A spear with a throwing lever",
-                damage: {
-                    base: 10,
-                    randomMultiplier: 11,
-                },
-                price: 400,
-            },
-            bludgeoningMace: {
-                name: "BLUDGEONING MACE",
-                description: "A stick with a spikey metal ball at the end",
-                damage: {
-                    base: 10,
-                    randomMultiplier: 14,
-                },
-                price: 500,
-            },
-             cathodeRayTubeMonitor: {
-                name: "CATHODE RAY TUBE MONITOR",
-                description: "A CRT monitor. Heavy as piss.",
-                damage: {
-                    base: 13,
-                    randomMultiplier: 17,
-                },
-                price: 1000,
-            },
-            magicPencil: {
-                name: "MAGIC PENCIL",
-                description: "SpongeBob SquarePants - Season 2, Episode 14B - Frankendoodle",
-                damage: {
-                    base: 15,
-                    randomMultiplier: 18,
-                },
-                price: 1400,
-            },
-            goldenWang: {
-                name: "GOLDEN WANG",
-                description: "With the power of the Golden Wang, the Discordian parasite shall perish!",
-                damage: {
-                    base: 69,
-                    randomMultiplier: 69,
-                },
-                price: 6900,
-            },
-        };
-
-        const armor = {
-            graphicTee: {
-                name: "GRAPHIC TEE",
-                description: "A t-shirt that says 'Normal people scare me'",
-                defense: 1,
-                price: 20,
-            },
-            barrelWithSuspenders: {
-                name: "BARREL (with suspenders)",
-                description: "An empty barrel that sort of covers your torso and legs. Smells like whisky too!",
-                defense: 3,
-                price: 50,
-            },
-            leatherArmor: {
-                name: "LEATHER ARMOR",
-                description: "The finest in leather, fitted with a tight top, codpiece, cat o' nine tails... (uh, are you sure this is actually armor?)",
-                defense: 6,
-                price: 150,
-            },
-            milaneseArmor: {
-                name: "MILANESE ARMOR",
-                description: "A classic suit of armor. Looks kind of like a Renaissance-era Robocop",
-                defense: 12,
-                price: 1000,
-            },
-            blackPlateArmor: {
-                name: "BLACK PLATE ARMOR",
-                description: "Literally a giant black dinner plate. Deceptively protective.",
-                defense: 16,
-                price: 1500,
-            },
-            nokiaMail: {
-                name: "NOKIA MAIL",
-                description: "A Nokia branded mail. No, not like an email... more like a chainmail. But Nokia.",
-                defense: 21,
-                price: 2000,
-            },
-        };
-
-        const items = {
-            canOfHamms: {
-                name: "CAN OF HAMM'S",
-                description: "A warm can of beer. Delicious..? Heals +5 HP",
-                use: () => {
-                    sendToServer({ type: "use_item", itemId: "canOfHamms" });
-                },
-                merchantStockChance: 0.9,
-                price: 10,
-            },
-            glassOfToiletWater: {
-                name: "GLASS OF TOILET WATER",
-                description: "A glass filled to the rim with toilet water, extracted from the toilet bowl belonging to a Keeper. The glass has a rather badass sticker of a skeleton riding a motorcycle neatly applied... Heals +50 HP",
-                use: () => {
-                    sendToServer({ type: "use_item", itemId: "glassOfToiletWater" });
-                },
-                merchantStockChance: .4,
-                price: 50,
-            },
-            alaskaRaisins: {
-                name: "ALASKA RAISINS",
-                description: "Holy shit! It's the Alaska Raisins! Heals +70 HP",
-                use: () => {          
-                    sendToServer({ type: "use_item", itemId: "alaskaRaisins" });
-                },
-                merchantStockChance: .35,
-                price: 80,
-            },
-            cupOfLean: {
-                name: "CUP OF LEAN",
-                description: "A crusty styrofoam cup filled with a strange purple syrup. Heals +20 HP",
-                use: () => {
-                    sendToServer({ type: "use_item", itemId: "cupOfLean" });
-                },
-                merchantStockChance: 0.5,
-                price: 30,
-            },
-            dowsingRod: {
-                name: "DOWSING ROD",
-                description: "A Y-shaped stick. Reveals the exit of the current floor",
-                use: () => {
-                    sendToServer({ type: "use_item", itemId: "dowsingRod" });
-                },
-                merchantStockChance: 0.8,
-                price: 20,
-            },
-            torch: {
-                name: "TORCH",
-                description: "An unlit torch. Using it will reveal the map of the current floor",
-                use: () => {
-                    sendToServer({ type: "use_item", itemId: "torch" });
-                },
-                merchantStockChance: 0.8,
-                price: 60,
-            },
-            brickOfC4: {
-                name: "BRICK OF C-4",
-                description: "An incendiary plastic explosive. Great for turning anything into nothing real quick",
-                use: () => useC4(),
-                merchantStockChance: 0.5,
-                price: 300,
-            },
-        };
+        let items = {};
+        let weapons = {};
+        let armor = {};
 
         function useC4() {
             playSFX('explosion');
@@ -1981,19 +1810,21 @@ __\\_______^/
             drawMinimap();
             let output = "";
             const stats1Html = `
-                <div center>==STATS==</div>
-                <div class="HP">HP:</div> <a>${player.hp}/${player.maxHp}</a>
-                <div class="DEF">DEF:</div> <a>${player.defense}</a>
-                <div class="PRS">PRS:</div> <a>${player.persuasion}</a>
-                <div class="SPD">SPD:</div> <a>${player.speed}</a>
+                <div center>.-STATS-.</div>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|===<span class="HP">HP</span>===|</span><span style="font-size:0.95em; margin-top:2px;">${player.hp}/${player.maxHp}</span>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="DEF">DEF</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.defense}</span>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="PRS">PRS</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.persuasion}</span>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="SPD">SPD</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.speed}</span>
+                <p></p>
+                <div center>.______.</div>
             `;
             document.getElementById('stats1').innerHTML = stats1Html;
 
             const stats2Html = `
-                <div class="action">FLOOR</div> <a>${floor}</a>
-                <div class="LV">LV</div> <a>${player.level}</a>
-                <div class="EXP">EXP</div> <a>${player.exp}/${player.level * 10}</a>
-                <div class="BTC">BTC</div> <a>${player.bitcoins}</a>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>.--<span class="action">FLOOR</span>--.</span><span style="font-size:0.95em; margin-top:2px;">${floor}</span>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>+===<span class="LV">LV</span>===+</span><span style="font-size:0.95em; margin-top:2px;">${player.level}</span>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>+===<span class="EXP">EXP</span>===+</span><span style="font-size:0.95em; margin-top:2px;">${player.exp}/${player.level * 10}</span>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>+===<span class="BTC">BTC</span>===+</span><span style="font-size:0.95em; margin-top:2px;">${player.bitcoins}</span>
             `;
             document.getElementById('stats2').innerHTML = stats2Html;    
 
@@ -2187,6 +2018,14 @@ __\\_______^/
 
             playSFX('attack');
             const playerWeapon = weapons[player.weapon];
+            if (!playerWeapon || !playerWeapon.damage) {
+                // Fallback: if weapon data is missing, do minimal damage
+                const dmg = 1;
+                currentEnemy.hp -= dmg;
+                updateBattleLog(`You deal ${dmg} HP to ${currentEnemy?.name || 'the enemy'} (with your bare hands!)`);
+                endOfPlayerTurn();
+                return;
+            }
             const dmg = Math.floor(Math.random() * playerWeapon.damage.randomMultiplier) + playerWeapon.damage.base;
             currentEnemy.hp -= dmg;
             updateBattleLog(`You deal ${dmg} HP to ${currentEnemy.name}`);
@@ -2889,8 +2728,8 @@ __\\_______^/
                     getOptions: () => {
                         const options = Object.keys(player.inventory).map((itemId) => ({
                             id: itemId,
-                            displayText: items[itemId].name,
-                            description: items[itemId].description,
+                            displayText: items[itemId]?.name || itemId,
+                            description: items[itemId]?.desc || '',
                             trailText: `${player.inventory[itemId]}`,
                         }));
 
@@ -2960,14 +2799,25 @@ __\\_______^/
                             : "Your wallet is emptier than a lughead's skull. But you can still look around";
                     },
                     getOptions: () => {
-                        const options = merchant.items.map((itemId) => ({
+                        // Defensive: fallback if merchant.items is undefined or not an array
+                        const itemList = Array.isArray(merchant.items) ? merchant.items : Object.keys(items);
+                        const options = itemList.map((itemId) => ({
                             id: itemId,
-                            displayText: items[itemId].name,
-                            description: items[itemId].description,
-                            trailText: `${items[itemId].price} BTC`,
-                            disabled: items[itemId].price > player.bitcoins,
-                            className: items[itemId].price > player.bitcoins ? 'tooExpensive' : undefined,
+                            displayText: items[itemId]?.name || itemId,
+                            description: items[itemId]?.desc || '',
+                            trailText: `${items[itemId]?.price ?? '?'} BTC`,
+                            disabled: (items[itemId]?.price ?? 99999) > player.bitcoins,
+                            className: (items[itemId]?.price ?? 99999) > player.bitcoins ? 'tooExpensive' : undefined,
                         }));
+
+                        if (options.length === 0) {
+                            options.push({
+                                id: "_noitems",
+                                displayText: "No items available",
+                                description: "The merchant has nothing to sell right now.",
+                                disabled: true
+                            });
+                        }
 
                         options.push({
                             id: "_exit",
@@ -2978,7 +2828,9 @@ __\\_______^/
                         return options;
                     },
                     select: (selectedOptionId) => {
-                        merchant.buy('item', selectedOptionId);
+                        if (selectedOptionId !== "_noitems" && selectedOptionId !== "_exit") {
+                            merchant.buy('item', selectedOptionId);
+                        }
                     },
                 },
                 merchantWeapons: {
@@ -2988,7 +2840,9 @@ __\\_______^/
                             ? `You have <span class="BTC">${player.bitcoins} BTC</span> in your wallet`
                             : "Your wallet is emptier than a lughead's skull. But you can still look around";
 
-                        const currentWeapon = weapons[player.weapon].name;
+                        // Defensive: fallback if weapons[player.weapon] is undefined
+                        const currentWeaponObj = weapons[player.weapon] || { name: player.weapon || "Unknown Weapon" };
+                        const currentWeapon = currentWeaponObj.name;
                         const currentWeaponDisplay = getArticle(currentWeapon) + currentWeapon;
                         const wieldingMessage = `You are currently wielding ${currentWeaponDisplay}`;
 
@@ -2997,19 +2851,15 @@ __\\_______^/
                     getOptions: () => {
                         const weaponKeys = Object.keys(weapons);
                         const options = weaponKeys.map((weaponId) => {
-                            const tooExpensive = weapons[weaponId].price > player.bitcoins;
+                            const tooExpensive = weapons[weaponId]?.price > player.bitcoins;
                             const notAnUpgrade = weaponKeys.indexOf(player.weapon) >= weaponKeys.indexOf(weaponId);
-
                             return {
                                 id: weaponId,
-                                displayText: weapons[weaponId].name,
-                                description:
-                                    `${weapons[weaponId].description}\n` +
-                                    `Base Damage: ${weapons[weaponId].damage.base}, ` +
-                                    `Random Multiplier: ${weapons[weaponId].damage.randomMultiplier}`,
-                                trailText: `${weapons[weaponId].price} BTC`,
+                                displayText: weapons[weaponId]?.name || weaponId,
+                                description: weapons[weaponId]?.desc || '',
+                                trailText: `${weapons[weaponId]?.price ?? '?'} BTC`,
                                 disabled: tooExpensive || notAnUpgrade,
-                                className: notAnUpgrade ? 'muted' : (tooExpensive ? 'tooExpensive' : undefined),
+                                className: tooExpensive ? 'tooExpensive' : notAnUpgrade ? 'notAnUpgrade' : undefined,
                             };
                         });
 
@@ -3032,7 +2882,9 @@ __\\_______^/
                             ? `You have <span class="BTC">${player.bitcoins} BTC</span> in your wallet`
                             : "Your wallet is emptier than a lughead's skull. But you can still look around";
 
-                        const currentArmor = armor[player.armor].name;
+                        // Defensive: fallback if armor[player.armor] is undefined
+                        const currentArmorObj = armor[player.armor] || { name: player.armor || "Unknown Armor" };
+                        const currentArmor = currentArmorObj.name;
                         const currentArmorDisplay = getArticle(currentArmor) + currentArmor;
                         const wearingMessage = `You are currently wearing ${currentArmorDisplay}`;
 
@@ -3041,18 +2893,15 @@ __\\_______^/
                     getOptions: () => {
                         const armorKeys = Object.keys(armor);
                         const options = armorKeys.map((armorId) => {
-                            const tooExpensive = armor[armorId].price > player.bitcoins;
+                            const tooExpensive = armor[armorId]?.price > player.bitcoins;
                             const notAnUpgrade = armorKeys.indexOf(player.armor) >= armorKeys.indexOf(armorId);
-
                             return {
                                 id: armorId,
-                                displayText: armor[armorId].name,
-                                description:
-                                    `${armor[armorId].description}\n` +
-                                    `Defense: ${armor[armorId].defense}`,
-                                trailText: `${armor[armorId].price} BTC`,
+                                displayText: armor[armorId]?.name || armorId,
+                                description: armor[armorId]?.desc || '',
+                                trailText: `${armor[armorId]?.price ?? '?'} BTC`,
                                 disabled: tooExpensive || notAnUpgrade,
-                                className: notAnUpgrade ? 'muted' : (tooExpensive ? 'tooExpensive' : undefined),
+                                className: tooExpensive ? 'tooExpensive' : notAnUpgrade ? 'notAnUpgrade' : undefined,
                             };
                         });
 
@@ -3554,6 +3403,7 @@ You found a treasure chest! Do you want to open it?
       hideLoginModal();
       startPing(); // Start pinging after login
       sendToServer({ type: "request_stats" });
+      requestItemData(); // Request item data after login
     }
 
     // ===== AUTO-LOGIN IF COOKIE EXISTS =====
@@ -3735,5 +3585,10 @@ function sendSeenTiles() {
         blockGameUntilLogin();
         connectToServer();
     });
+
+    // Request item data from server
+    function requestItemData() {
+        sendToServer({ type: "get_item_data" });
+    }
 </script>
 </body></html>
