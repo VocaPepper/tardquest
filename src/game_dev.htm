@@ -762,6 +762,83 @@ function connectToServer() {
             return;
         }
 
+        if (data.type === "update_stats") {
+            // Only update player.hp if not in combat, or if the new HP is less than the current (damage), or if explicitly healing
+            if (typeof data.stats.hp !== "undefined") {
+                if (!player.inCombat || data.stats.hp < player.hp || data.stats.hp > player.hp) {
+                    player.hp = data.stats.hp;
+                }
+                // Otherwise, ignore HP update to prevent overwriting correct value
+            }
+            // Update all other stats as usual, but skip hp (already handled)
+            for (const key in data.stats) {
+                if (key !== "hp") player[key] = data.stats[key];
+            }
+            if (typeof data.remainingPoints !== "undefined") {
+                player.remainingPoints = data.remainingPoints;
+            }
+            // Do NOT open level up menu here; only open on explicit 'level_up' message from server
+            player.levelingUp = false;
+            render();
+            // If stat allocation menu is open, re-render it to reflect new stats
+            if (menu.getActiveMenu && menu.getActiveMenu() && menu.getActiveMenu().title === "STAT ALLOCATION") {
+                menu.render();
+            }
+            return;
+        }
+
+            // Handle item effect responses from the server
+        if (data.type === "item_effect") {
+            if (data.heal) {
+                player.hp = Math.min(player.maxHp, player.hp + data.heal);
+                render();
+            }
+            if (data.reveal_exit) {
+                // Reveal exit on minimap
+                for (let y = 0; y < HEIGHT; y++) {
+                    for (let x = 0; x < WIDTH; x++) {
+                        if (MAP[y][x] === 'E') {
+                            revealMapSpot(x, y, 1);
+                            render();
+                            break;
+                        }
+                    }
+                }
+            }
+            if (data.reveal_map) {
+                for (let y = 0; y < HEIGHT; y++) {
+                    for (let x = 0; x < WIDTH; x++) {
+                        seenTiles[y][x] = true;
+                    }
+                }
+                sendSeenTiles();
+                render();
+            }
+            if (data.explode) {
+                playSFX('explosion');
+            }
+            return;
+        }
+
+        if (data.type === "chest_opened") {
+            // Remove the chest from the map if successful
+            if (data.success && data.chestId) {
+                const [x, y] = data.chestId.split(',').map(Number);
+                if (MAP[y] && MAP[y][x] === 'T') {
+                    MAP[y][x] = '.';
+                }
+                updateBattleLog(data.message || "You opened a chest!");
+                // Optionally update inventory/bitcoins if included
+                if (typeof data.bitcoins !== "undefined") player.bitcoins = data.bitcoins;
+                if (typeof data.inventory !== "undefined") player.inventory = { ...data.inventory };
+                updateInventoryUI();
+                render();
+            } else {
+                updateBattleLog(data.message || "Failed to open chest.");
+            }
+            return;
+        }
+
         // Handle login/register result as JSON
         if (data.type === 'login_result' || data.type === 'register_result') {
             if (data.success) {
@@ -770,12 +847,39 @@ function connectToServer() {
                 document.getElementById('loginError').textContent = '';
                 updateChatLog(`<span class='chat'>${data.message}</span>`); // Show login/register success in chatlog
                 requestMapFromServer(); // Request the map after login
+                // Show stat allocation menu ONLY on first account run
+                if (data.firstLogin) {
+                    menu.open('statAllocation');
+                    // Optionally, show the stat allocation controls for mobile
+                    if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                        openControl('statAllocation-controls');
+                    }
+                }
             } else {
                 document.getElementById('loginError').textContent = data.message || 'Login/Register failed.';
                 updateChatLog(`<span class='chat'>${data.message || 'Login/Register failed.'}</span>`); // Show login/register error in chatlog
                 sessionToken = null;
                 blockGameUntilLogin();
             }
+            if (data.type === 'login_result' && data.success) {
+                sendToServer({ type: "get_inventory" });
+                sendToServer({ type: "get_bitcoins" });
+            }
+            return;
+        }
+
+        if (data.type === "update_inventory") {
+            // Defensive: always replace inventory, never mutate
+            player.inventory = { ...data.inventory };
+            player.inputDisabled = false; // Re-enable input after server update
+            updateInventoryUI();
+            render();
+            return;
+        }
+        if (data.type === "update_bitcoins") {
+            player.bitcoins = data.bitcoins;
+            updateBitcoinsUI();
+            render();
             return;
         }
 
@@ -817,6 +921,12 @@ function connectToServer() {
             return;
         }
 
+        if (data.type === "level_up") {
+            player.levelingUp = true;
+            menu.open("levelUp");
+            return;
+        }
+
         // Fallback: log unknown message
         if (data.message) {
             console.log(`${data.timestamp || ''} ${data.message}`);
@@ -848,23 +958,45 @@ function startPing() {
 }
 
 function sendPlayerPosition() {
-    if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
-        mainServer.send(JSON.stringify({
-            type: "player_position",
-            x: player.x,
-            y: player.y,
-            floor: floor
-        }));
-    }
+    sendToServer({
+        type: "player_position",
+        x: player.x,
+        y: player.y,
+        floor: floor
+    });
 }
 function sendSeenTiles() {
-    if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
-        mainServer.send(JSON.stringify({
-            type: "seen_tiles",
-            seenTiles: seenTiles,
-            floor: floor
-        }));
+    sendToServer({
+        type: "seen_tiles",
+        seenTiles: seenTiles,
+        floor: floor
+    });
+}
+// Add missing UI update stubs to prevent errors
+function updateInventoryUI() {
+    // Display inventory in the #controls panel
+    const controls = document.getElementById('controls');
+    if (!controls) return;
+    let html = '<strong>Inventory:</strong><br>';
+    const inv = player.inventory || {};
+    const itemNames = Object.keys(inv).filter(k => inv[k] > 0);
+    if (itemNames.length === 0) {
+        html += '<span style="color:#888">(empty)</span>';
+    } else {
+        html += '<ul style="margin:0 0 0 10px;padding:0;list-style:none;">';
+        for (const key of itemNames) {
+            html += `<li>${key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}: <span style='color:#FAEB4A'>${inv[key]}</span></li>`;
+        }
+        html += '</ul>';
     }
+    // Also show bitcoins
+    html += `<br><strong>BTC:</strong> <span style='color:#FAEB4A'>${player.bitcoins}</span>`;
+    controls.innerHTML = html;
+}
+
+function updateBitcoinsUI() {
+    // Just call updateInventoryUI to refresh BTC display
+    updateInventoryUI();
 }
         const
             WIDTH = 30,
@@ -881,25 +1013,13 @@ function sendSeenTiles() {
             y: 1,
             bitcoins: 0,
             dir: 0,
-            hp: 20,
-            maxHp: 20,
-            defense: 5,
-            persuasion: 7,
-            speed: 12,
-            exp: 0,
-            level: 1,
             inCombat: false,
             levelingUp: false,
-            inventory: {
-                canOfHamms: 2,
-                cupOfLean: 2,
-                torch: 2,
-                brickOfC4: 2,
-                dowsingRod: 2,
-            },
+            inventory: {},
             weapon: 'pointyStick',
             armor: 'graphicTee',
             inputDisabled: false,
+            // All stats (hp, maxHp, defense, persuasion, speed, exp, level) are now server-owned and will be set from server responses
         };
 
         const merchant = {
@@ -925,19 +1045,7 @@ function sendSeenTiles() {
                     return;
                 }
 
-                if (player.bitcoins < merchandise.price) {
-                    merchant.say('Too bad, kid. Come back when you get some coin!');
-                    return;
-                }
-
-                player.bitcoins -= merchandise.price;
-                playSFX('kaching');
-
-                if (type === 'item') {
-                    player.inventory[key] = (player.inventory?.[key] || 0) + 1;
-                } else {
-                    player[type] = key;
-                }
+                sendToServer({ type: "buy_item", itemId: key, price: merchandise.price });
 
                 const purchaseFlavorText = [
                     "HAHA! You won't regret it!",
@@ -966,12 +1074,10 @@ function sendSeenTiles() {
             die: function () {
                 this.isAlive = false;
                 this.isActiveOnFloor = false;
-                // Award between 50 and 100 BTC for the slaughter. I guess that's one way to win
-                const rewardBtc = (5 + Math.round(Math.random() * 5)) * 10;
-                player.bitcoins += rewardBtc;
+                sendToServer({ type: "special_reward", sourceType: "gambler", sourceId: "gambler_death" });
                 playSFX('scream');
                 gambler.say('AUGH!!');
-                updateBattleLog(`The <span class="gambler">gambler</span> has been reduced to a confetti of shrapnel and bone! You find <span class="BTC">${rewardBtc} BTC</span> among the remains. Awesome!`);
+                updateBattleLog(`The <span class="gambler">gambler</span> has been reduced to a confetti of shrapnel and bone!`);
             }
         };
 
@@ -1192,8 +1298,7 @@ function sendSeenTiles() {
                 name: "CAN OF HAMM'S",
                 description: "A warm can of beer. Delicious..? Heals +5 HP",
                 use: () => {
-                    healPlayer(5);
-                    updateBattleLog("You chug the can, filling your mouth with the flavor of boiled socks. +5 HP");
+                    sendToServer({ type: "use_item", itemId: "canOfHamms" });
                 },
                 merchantStockChance: 0.9,
                 price: 10,
@@ -1202,8 +1307,7 @@ function sendSeenTiles() {
                 name: "GLASS OF TOILET WATER",
                 description: "A glass filled to the rim with toilet water, extracted from the toilet bowl belonging to a Keeper. The glass has a rather badass sticker of a skeleton riding a motorcycle neatly applied... Heals +50 HP",
                 use: () => {
-                    healPlayer(50);
-                    updateBattleLog("Sickeningly delicious...? You question your current state of mind for a moment. +50 HP");
+                    sendToServer({ type: "use_item", itemId: "glassOfToiletWater" });
                 },
                 merchantStockChance: .4,
                 price: 50,
@@ -1212,9 +1316,7 @@ function sendSeenTiles() {
                 name: "ALASKA RAISINS",
                 description: "Holy shit! It's the Alaska Raisins! Heals +70 HP",
                 use: () => {          
-                    healPlayer(70);
-                    playSFX('raisins');
-                    updateBattleLog("The Alaska Raisins sing a lovely song about how epic igloos are as you pop them into your mouth one by one. You can still hear them singing in your stomach... +70 HP");
+                    sendToServer({ type: "use_item", itemId: "alaskaRaisins" });
                 },
                 merchantStockChance: .35,
                 price: 80,
@@ -1223,39 +1325,16 @@ function sendSeenTiles() {
                 name: "CUP OF LEAN",
                 description: "A crusty styrofoam cup filled with a strange purple syrup. Heals +20 HP",
                 use: () => {
-                    healPlayer(20);
-                    updateBattleLog("Your stomach feels nauseous, but your head feels great! +20 HP");
+                    sendToServer({ type: "use_item", itemId: "cupOfLean" });
                 },
                 merchantStockChance: 0.5,
                 price: 30,
-            },
-            glassOfToiletWater: {
-                name: "GLASS OF TOILET WATER",
-                description: "A glass filled to the rim with toilet water, extracted from the toilet bowl belonging to a Keeper. The glass has a rather badass sticker of a skeleton riding a motorcycle neatly applied... Heals +50 HP",
-                use: () => {
-                    healPlayer(50);
-                    updateBattleLog("Sickeningly delicious...? You question your current state of mind for a moment. +50 HP");
-                },
-                merchantStockChance: .4,
-                price: 50,
-            },
-            alaskaRaisins: {
-                name: "ALASKA RAISINS",
-                description: "Holy shit! It's the Alaska Raisins! Heals +70 HP",
-                use: () => {          
-                    healPlayer(70);
-                    playSFX('raisins');
-                    updateBattleLog("The Alaska Raisins sing a lovely song about how epic igloos are as you pop them into your mouth one by one. You can still hear them singing in your stomach... +70 HP");
-                },
-                merchantStockChance: .35,
-                price: 80,
             },
             dowsingRod: {
                 name: "DOWSING ROD",
                 description: "A Y-shaped stick. Reveals the exit of the current floor",
                 use: () => {
-                    useDowsingRod();
-                    updateBattleLog("The exit has been revealed!");
+                    sendToServer({ type: "use_item", itemId: "dowsingRod" });
                 },
                 merchantStockChance: 0.8,
                 price: 20,
@@ -1264,9 +1343,7 @@ function sendSeenTiles() {
                 name: "TORCH",
                 description: "An unlit torch. Using it will reveal the map of the current floor",
                 use: () => {
-                    revealMap();
-                    playSFX('torch');
-                    updateBattleLog("Lo, the way has been made clear!");
+                    sendToServer({ type: "use_item", itemId: "torch" });
                 },
                 merchantStockChance: 0.8,
                 price: 60,
@@ -1280,45 +1357,6 @@ function sendSeenTiles() {
             },
         };
 
-        function healPlayer(hp) {
-            player.hp = Math.min(player.maxHp, player.hp + hp);
-        }
-
-        function useDowsingRod() {
-            for (let y=0; y<MAP.length; y++) {
-                for (let x=0; x<MAP[y].length; x++) {
-                    if (MAP[y][x] === 'E') {
-                        revealMapSpot(x, y, 1);
-
-                        // Since there's only one exit per floor, we can render and exit early
-                        render();
-                        return;
-                    }
-                }
-            }
-        }
-
-        function revealMapSpot(x, y, radius) {
-            for (let py=y-radius; py<=y+radius; py++) {
-                for (let px=x-radius; px<=x+radius; px++) {
-                    if (typeof MAP[py]?.[px] !== 'undefined') {
-                        seenTiles[py][px] = true;
-                    }
-                }
-            }
-        }
-
-        function revealMap() {
-            // Only reveal the current floor, not every floor!
-            for (let y = 0; y < HEIGHT; y++) {
-                for (let x = 0; x < WIDTH; x++) {
-                    seenTiles[y][x] = true;
-                }
-            }
-            sendSeenTiles(); // Sync seenTiles for this floor to the server
-            render();
-        }
-
         function useC4() {
             playSFX('explosion');
 
@@ -1328,85 +1366,11 @@ function sendSeenTiles() {
                 updateBattleLog(`You exploded the shit out of <span class="action">${currentEnemy.name}</span> for <span class="HP">${dmg} HP</span>!!!`);
                 endOfPlayerTurn();
             } else {
-                mainServer.send(JSON.stringify({
-                    type: "explode_path",
-                    x: player.x,
-                    y: player.y,
-                    dir: player.dir,
-                    floor: floor
-                }));
-                updateBattleLog('<span class="action">KABOOM!</span> The dungeon walls crumble like charred toast!');
-            }
-        }
-
-        function breakMap(x, y) {
-            if (coordsInBounds(x, y)) {
-                if (MAP[y][x] === '#') {
-                    MAP[y][x] = '.'; // Destroy walls
-                }
-
-                const killedMerchant =
-                    merchant.isAlive &&
-                    merchant.isActiveOnFloor &&
-                    merchant.x === x && merchant.y === y;
-                if (killedMerchant) {
-                    merchant.die();
-                }
-
-                const killedGambler =
-                    gambler.isAlive &&
-                    gambler.isActiveOnFloor &&
-                    gambler.x === x && gambler.y === y;
-                if (killedGambler) {
-                    gambler.die();
-                }
-
-                // Destroy treasure chests
-                if (MAP[y][x] === 'T') {
-                    MAP[y][x] = '.';
-                    updateBattleLog('<span class="action">Gee willikers, you just destroyed a perfectly good treasure chest! Oh well...</span><br>');
-                }
-
-                // Destroy mimic chests and reward BTC
-                if (MAP[y][x] === 'M') {
-                    MAP[y][x] = '.'; // Remove the mimic chest from the map
-
-                    // Calculate scaled BTC reward
-                    const baseMimic = enemies.find(e => e.id === "mimic");
-                    const scaledMimic = scaleMimicStats(baseMimic);
-                    const mimicBTC = scaledMimic.bitcoins;
-
-                    player.bitcoins += mimicBTC; // Reward the player
-                    updateBattleLog(`<span class="action">WHAT THE FUCK? That was a mimic?!</span> You obtained <span class="BTC">${mimicBTC} BTC</span> from the intestines spilled from its gaping maw.`);
-                    playSFX('scream');
-                }
-
-                seenTiles[y][x] = true;
-            }
-        }
-
-        function setMerchantWares() {
-            const itemKeys = Object.keys(items);
-            if (itemKeys.length === 0) {
-                console.error("No items available in the items object!");
-                return;
-            }
-
-            let attempts = 0; // Add a safeguard to prevent infinite loops
-            do {
-                merchant.items = [];
-                itemKeys.forEach((key) => {
-                    if (Math.random() < items[key].merchantStockChance) {
-                        merchant.items.push(key);
-                    }
+                sendToServer({
+                    type: "use_item",
+                    itemId: "brickOfC4"
                 });
-
-                attempts++;
-                if (attempts > 100) {
-                    console.error(`Failed to generate merchant items after ${attempts} attempts!`);
-                    break;
-                }
-            } while (merchant.items.length === 0);
+            }
         }
 
         const sfx = {
@@ -1472,14 +1436,12 @@ function sendSeenTiles() {
         let musicEnabled = true;
 
         function sendMapToServer() {
-            if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
-                mainServer.send(JSON.stringify({
-                    type: "map_update",
-                    map: MAP,
-                    floor: floor,
-                    exit: exit
-                }));
-            }
+            sendToServer({
+                type: "map_update",
+                map: MAP,
+                floor: floor,
+                exit: exit
+            });
         }
 
         function handleIncomingMap(data) {
@@ -1529,10 +1491,7 @@ function sendSeenTiles() {
         }
 
         function interactWithHealingTile(x, y) {
-            const healAmount = Math.ceil(player.maxHp * 0.3); // Heal 30% of max HP
-            healPlayer(healAmount);
-            updateBattleLog(`An oddly colored, perfectly square floor tile <span class="friendly">heals you for <span class="healtile">${healAmount} HP</span></span>`);
-
+            sendToServer({ type: "use_item", itemId: "healingTile" });
             MAP[y][x] = '.';
             render();
         }
@@ -2190,7 +2149,6 @@ __\\_______^/
                     currentEnemy.attack[0] + (floorBoost * 3), // Adjust attack range based on floor scaling
                     currentEnemy.attack[1] + (floorBoost * 3)  // Adjust attack range based on floor scaling
                 ];
-                currentEnemy.bitcoins += floorBoost; // Increase Bitcoin drop based on floor scaling
             }
 
             player.inCombat = true;
@@ -2215,30 +2173,23 @@ __\\_______^/
 
         function endOfPlayerTurn() {
             if (currentEnemy.hp <= 0) {
-                if (currentEnemy.id === "mimic") {
-                    updateBattleLog(`The <span class='enemy'>MIMIC</span> has been defeated! You find <span class="BTC">${currentEnemy.bitcoins} BTC</span> in its remains!`);
-                    player.bitcoins += currentEnemy.bitcoins; // Award scaled BTC
-                } else {
-                    const baseExp = 5;
-                    const floorBoost = Math.floor(floor / 2);
-                    const exp = baseExp + (floorBoost * 5); // +5 EXP per boost
-                    const bitcoinsEarned = currentEnemy.bitcoins;
+                sendToServer({ type: "enemy_reward", enemyId: currentEnemy.id });
+                const baseExp = 5;
+                const floorBoost = Math.floor(floor / 2);
+                const exp = baseExp + (floorBoost * 5); // +5 EXP per boost
 
-                    const randomMsg = defeatMessages[Math.floor(Math.random() * defeatMessages.length)];
-                    updateBattleLog(`${currentEnemy.name} ${randomMsg}`);
-                    updateBattleLog(`You gained <span class="EXP">+${exp}</span> EXP and <span class="BTC">${bitcoinsEarned} BTC</span>`);
-                    player.bitcoins += bitcoinsEarned;
-                    player.exp += exp;
-                }
+                const randomMsg = defeatMessages[Math.floor(Math.random() * defeatMessages.length)];
+                updateBattleLog(`${currentEnemy.name} ${randomMsg}`);
+                updateBattleLog(`You gained <span class="EXP">+${exp}</span> EXP`);
 
                 player.inCombat = false;
                 currentEnemy = null;
                 playMusic("exploration");
                 party = party.filter(a => a.hp > 0);
 
-                if (player.exp >= player.level * 10) {
-                    menu.open("levelUp"); // Open the level-up menu
-                }
+                // Request updated stats from server
+                sendToServer({ type: "request_stats" });
+                // If level up is available, menu will open after receiving update_stats
             } else {
                 enemyAttack();
             }
@@ -2266,6 +2217,8 @@ __\\_______^/
 
                 target.hp -= dmg;
                 updateBattleLog(`<span class="enemy">${currentEnemy.name}</span> deals <span class="enemy">${dmg} HP</span> to your <span class="friendly">${target.name}</span>`);
+                // Notify server of party member damage
+                sendToServer({ type: "party_member_damaged", name: target.name, hp: target.hp });
 
                 if (target.hp <= 0) {
                     updateBattleLog(`Your <span class="friendly">${target.name}</span> has been <span class="action">eviscerated</span>...`);
@@ -2286,6 +2239,8 @@ __\\_______^/
                 player.hp -= dmg;
 
                 updateBattleLog(`<span class="enemy">${currentEnemy.name}</span> deals <span class="HP">${dmg} HP</span> to <span class="friendly">you</span>`);
+                // Notify server of player damage
+                sendToServer({ type: "player_damaged", hp: player.hp });
 
                 if (player.hp <= 0) gameOver = true;
             }
@@ -2406,37 +2361,53 @@ __\\_______^/
 
 
 
+        function requestLevelUp(stat) {
+            sendToServer({ type: "level_up", stat });
+        }
+
         function handleLevelUpInput(key) {
             switch (key) {
                 case 'h':
-                    player.maxHp += 5;
+                    requestLevelUp("maxHp");
                     break;
                 case 'd':
-                    player.defense += 2;
+                    requestLevelUp("defense");
                     break;
                 case 'p':
-                    player.persuasion += 2;
+                    requestLevelUp("persuasion");
+                    break;
+                case 's':
+                    requestLevelUp("speed");
                     break;
                 default:
                     return;
             }
-            player.level++; // Increment the player's level
-            player.exp = 0; // Reset EXP
-            player.hp = player.maxHp; // Fully heal the player
-            player.levelingUp = false; // Reset the leveling-up flag
-            updateBattleLog(`<span class="LV">You leveled up! Welcome to level ${player.level}!</span>`);
+            // Do not mutate player stats locally; wait for update_stats from server
+            updateBattleLog(`<span class="LV">Level up requested!</span>`);
             render();
         }
 
         function useItem(itemName) {
-            items[itemName].use();
-
-            player.inventory[itemName]--;
-            if (player.inventory[itemName] <= 0) {
-                delete player.inventory[itemName];
+            // Robust validation: check for valid item, count, and prevent double-use
+            if (!itemName || !player.inventory[itemName] || player.inventory[itemName] <= 0) {
+                updateBattleLog(`You don't have any ${itemName ? items[itemName]?.name || itemName : 'item'}.`);
+                return;
             }
+            // Prevent double-use by disabling input until server responds
+            player.inputDisabled = true;
+            sendToServer({ type: "use_item", itemId: itemName });
+        }
 
-            render();
+        function buyItem(itemName, price) {
+            sendToServer({ type: "buy_item", itemId: itemName, price: price });
+        }
+
+        function addBitcoins(amount) {
+            sendToServer({ type: "add_bitcoins", amount: amount });
+        }
+        
+        function removeBitcoins(amount) {
+            sendToServer({ type: "remove_bitcoins", amount: amount });
         }
 
         function getArticle(noun) {
@@ -2448,7 +2419,7 @@ __\\_______^/
         }
 
         function gamble() {
-            player.bitcoins -= gambler.playPrice;
+            sendToServer({ type: "special_reward", sourceType: "gambler", sourceId: "gamble_play" });
             updateBattleLog(`You hand the gambler <span class="tooExpensive">${gambler.playPrice} BTC</span>. Let's hope it was worth it`);
 
             player.inputDisabled = true;
@@ -2552,25 +2523,6 @@ __\\_______^/
             }
         }
 
-        function handleLevelUpInput(key) {
-            if (key === 'h') {
-                player.maxHp += 5;
-            } else if (key === 'd') {
-                player.defense += 1;
-            } else if (key === 'p') {
-                player.persuasion += 1;
-            } else {
-                return;
-            }
-            player.level++;
-            player.exp = 0;
-            player.hp = player.maxHp;
-            player.levelingUp = false;
-
-            updateBattleLog(`<span class="LV">Oh... you leveled up. Whatever dude.</span>`);
-            render();
-        }
-
         function openChest() {
             const { x, y } = player.currentChest;
             const tile = MAP[y][x];
@@ -2588,21 +2540,10 @@ __\\_______^/
                 player.inCombat = true;
                 playMusic('battle');
             } else if (tile === 'T') {
-                // Normal chest, provide loot
-                const chestContents = Math.random() < 0.5
-                    ? { type: 'BTC', amount: Math.floor(Math.random() * 10) + 3 } // Random BTC (10-59)
-                    : { type: 'item', item: getRandomMerchantItem() };
-
-                if (chestContents.type === 'BTC') {
-                    player.bitcoins += chestContents.amount;
-                    updateBattleLog(`You found <span class="BTC">${chestContents.amount} BTC</span> in the chest!`);
-                } else if (chestContents.type === 'item') {
-                    const itemName = chestContents.item;
-                    player.inventory[itemName] = (player.inventory[itemName] || 0) + 1;
-                    updateBattleLog(`You found <span class="friendly">${items[itemName].name}</span> in the chest!`);
-                }
-
-                MAP[y][x] = '.'; // Remove the chest from the map
+                sendToServer({
+                    type: "open_chest",
+                    chestId: x + "," + y
+                });
             }
 
             player.currentChest = null; // Clear the stored chest position
@@ -2619,7 +2560,6 @@ __\\_______^/
                     scaledMimic.attack[0] + (floorBoost * 3), // Adjust attack range
                     scaledMimic.attack[1] + (floorBoost * 3)
                 ];
-                scaledMimic.bitcoins += floorBoost * 10; // Increase BTC reward
             }
 
             return scaledMimic;
@@ -2727,9 +2667,7 @@ __\\_______^/
         }
 
         function requestMapFromServer() {
-            if (typeof mainServer !== "undefined" && mainServer.readyState === WebSocket.OPEN) {
-                mainServer.send(JSON.stringify({ type: "request_map", floor: floor }));
-            }
+            sendToServer({ type: "request_map", floor: floor });
         }
 
         let mapInitialized = false;
@@ -3208,29 +3146,23 @@ You found a treasure chest! Do you want to open it?
                     select: (selectedOptionId) => {
                         switch (selectedOptionId) {
                             case "maxHp":
-                                player.maxHp += 5;
-                                player.hp = player.maxHp; // Fully heal the player
+                                requestLevelUp("maxHp");
                                 updateBattleLog("You slap your greasy tummy, as you feel your health has improved. +5 HP");
                                 break;
                             case "defense":
-                                player.defense += 2;
+                                requestLevelUp("defense");
                                 updateBattleLog("Your arms flex as if they have a mind of their own. +2 DEF");
                                 break;
                             case "persuasion":
-                                player.persuasion += 2;
+                                requestLevelUp("persuasion");
                                 updateBattleLog("You feel as though your chances at getting laid have statistically increased. How smooth. +2 PRS");
                                 break;
                             case "speed":
-                                player.speed += 1;
+                                requestLevelUp("speed");
                                 updateBattleLog("You may be retarded, but your legs sure aren't! +5% SPD");
                                 break;
                         }
-                            // Restore max HP after level up
-                        player.hp = player.maxHp;
-                            // Finalize level-up
-                        player.level++;
-                        player.exp = 0; // Reset EXP
-                        player.levelingUp = false;
+                        // Do not mutate player stats locally; wait for update_stats from server
                         menu.close();
                         render();
                     },
@@ -3238,9 +3170,11 @@ You found a treasure chest! Do you want to open it?
                 statAllocation: {
                     title: "STAT ALLOCATION",
                     landingHtml: () => {
-                        return `Build your character using the <span class="action">${player.remainingPoints}</span> points you have been allotted. Use them wisely...`;
+                        // Show remaining points from player object (server-synced)
+                        return `Build your character using the <span class="action">${player.remainingPoints ?? 0}</span> points you have been allotted. Use them wisely...`;
                     },
                     getOptions: () => {
+                        // Use only server-synced stats for display
                         return [
                             {
                                 id: "_confirm",
@@ -3258,112 +3192,63 @@ You found a treasure chest! Do you want to open it?
                                 description: "Randomly allocate your points.",
                             },
                             {
-                                id: "hp",
-                                displayText: `HP: ${player.maxHp}`,
+                                id: "maxHp",
+                                displayText: `HP: ${player.maxHp ?? "?"}`,
                                 description: "Increases Health Points. If you don't know what those are, you may actually be retarded.",
                             },
                             {
                                 id: "defense",
-                                displayText: `DEF: ${player.defense}`,
+                                displayText: `DEF: ${player.defense ?? "?"}`,
                                 description: "Increases defense against enemy attacks... obviously.",
                             },
                             {
                                 id: "persuasion",
-                                displayText: `PRS: ${player.persuasion}`,
+                                displayText: `PRS: ${player.persuasion ?? "?"}`,
                                 description: "Increases your chances at persuading monsters to join your party.",
                             },
                             {
                                 id: "speed",
-                                displayText: `SPD: ${player.speed}`,
+                                displayText: `SPD: ${player.speed ?? "?"}`,
                                 description: "Increases your movement speed. Each point allows you to move 5% faster.",
-                            },                            
+                            },
                         ];
                     },
                     select: (selectedOptionId) => {
                         if (selectedOptionId === "_confirm") {
                             if (player.remainingPoints > 0) {
                                 updateBattleLog("You must allocate all points before starting!");
+                                menu.render();
                                 return;
                             }
-                            finalizeStats();
+                            sendToServer({ type: "finalize_stats" });
+                            sendToServer({ type: "request_stats" }); // Update stats after finalizing
                             menu.close();
-                            render();
+                            render(); // Force UI update immediately
                         } else if (selectedOptionId === "reset") {
-                            resetStats();
+                            sendToServer({ type: "reset_stats" });
+                            sendToServer({ type: "request_stats" }); // Update stats after reset
                             menu.render();
+                            render(); // Force UI update immediately
                         } else if (selectedOptionId === "rollDice") {
-                            rollDiceForStats();
+                            sendToServer({ type: "roll_stats" });
+                            sendToServer({ type: "request_stats" }); // Update stats after rolling
                             menu.render();
+                            render(); // Force UI update immediately
                         } else if (player.remainingPoints > 0) {
-                            switch (selectedOptionId) {
-                                case "hp":
-                                    player.maxHp += 1;
-                                    player.hp = player.maxHp; // Keep current HP in sync
-                                    break;
-                                case "defense":
-                                    player.defense += 1;
-                                    break;
-                                case "persuasion":
-                                    player.persuasion += 1;
-                                    break;
-                                case "speed":
-                                    player.speed += 1;
-                                    break;
-                            }
-                            player.remainingPoints--;
+                            sendToServer({ type: "allocate_stat", stat: selectedOptionId });
+                            sendToServer({ type: "request_stats" }); // Update stats after allocation
                             menu.render();
+                            render(); // Force UI update immediately
                         } else {
                             updateBattleLog("No points remaining to allocate!");
+                            menu.render();
+                            render(); // Force UI update immediately
                         }
                     },
                 },
             },
         };
         player.remainingPoints = 10; //Points to allocate at start of game
-
-        // Function to reset stats
-        function resetStats() {
-            player.remainingPoints = 10;
-            player.maxHp = 20; // Reset to base stats
-            player.hp = player.maxHp;
-            player.defense = 5;
-            player.persuasion = 7;
-            player.speed = 9;
-            updateBattleLog("Stat allocation has been reset. Start over!");
-        }
-
-        // Function to randomly allocate points
-        function rollDiceForStats() {
-            resetStats(); // Reset stats before rolling
-            const stats = ["hp", "defense", "persuasion", "speed"];
-            while (player.remainingPoints > 0) {
-                const randomStat = stats[Math.floor(Math.random() * stats.length)];
-                switch (randomStat) {
-                    case "hp":
-                        player.maxHp += 1;
-                        player.hp = player.maxHp;
-                        break;
-                    case "defense":
-                        player.defense += 1;
-                        break;
-                    case "persuasion":
-                        player.persuasion += 1;
-                        break;
-                    case "speed":
-                        player.speed += 1;
-                        break;
-                }
-                player.remainingPoints--;
-            }
-            updateBattleLog("Points have been randomly allocated. Good luck!");
-        }
-
-        // Function to finalize stats after allocation
-        function finalizeStats() {
-            updateBattleLog("Stat allocation complete! Your adventure begins...");
-        }
-
-        menu.open("statAllocation");
 
         document.getElementById('resetButton').addEventListener('click', () => window.location.reload());
 
@@ -3643,6 +3528,7 @@ You found a treasure chest! Do you want to open it?
       player.inputDisabled = false; // Enable player input
       hideLoginModal();
       startPing(); // Start pinging after login
+      sendToServer({ type: "request_stats" });
     }
 
     blockGameUntilLogin();
