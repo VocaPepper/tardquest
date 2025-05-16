@@ -333,6 +333,9 @@
         .SPD {
             color: #7ec5ee;
         }
+        .LUK {
+            color: #f5b609;
+        }
         .action {
             color: #EC4134;
         }
@@ -677,7 +680,7 @@
             <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
             <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
         </div>
-            <div id="statAllocation-controls">
+            <div id="statAllocation-controls" style="visibility: hidden;">
             <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
             <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
             <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
@@ -802,6 +805,13 @@ function connectToServer() {
             if (menu.getActiveMenu && menu.getActiveMenu() && menu.getActiveMenu().title === "STAT ALLOCATION") {
                 menu.render();
             }
+            if (window._openStatAllocationMenu) {
+                menu.open('statAllocation');
+                if (document.getElementById('mobile-controls').style.visibility === 'visible') {
+                    openControl('statAllocation-controls');
+                }
+                window._openStatAllocationMenu = false;
+            }
             return;
         }
 
@@ -875,11 +885,8 @@ function connectToServer() {
                 requestMapFromServer(); // Request the map after login
                 // Show stat allocation menu ONLY on first account run
                 if (data.firstLogin) {
-                    menu.open('statAllocation');
-                    // Optionally, show the stat allocation controls for mobile
-                    if (document.getElementById('mobile-controls').style.visibility === 'visible') {
-                        openControl('statAllocation-controls');
-                    }
+                    sendToServer({ type: "request_stats" });
+                    window._openStatAllocationMenu = true;
                 }
             } else {
                 document.getElementById('loginError').textContent = data.message || 'Login/Register failed.';
@@ -967,6 +974,17 @@ function connectToServer() {
             updateChatLog(`<span class='chat'>${data.message}</span>`);
         } else {
             console.log("Unknown message type:", data);
+        }
+
+        if (data.type === "party_member_update") {
+            // Find the party member and update their HP
+            const member = party.find(m => m.name === data.name);
+            if (member) {
+                member.hp = data.hp;
+                updateBattleLog(`<span class="friendly">${data.name}</span>'s remaining HP: ${data.hp}`);
+                render();
+            }
+            return;
         }
     };
 }
@@ -1736,16 +1754,16 @@ __\\_______^/
                 <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="DEF">DEF</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.defense}</span>
                 <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="PRS">PRS</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.persuasion}</span>
                 <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="SPD">SPD</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.speed}</span>
-                <p></p>
+                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>|==<span class="LUK">LUK</span>==|</span><span style="font-size:0.95em; margin-top:2px;">${player.luck}</span>
                 <div center>.______.</div>
             `;
             document.getElementById('stats1').innerHTML = stats1Html;
 
-            const stats2Html = `
-                <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>.--<span class="action">FLOOR</span>--.</span><span style="font-size:0.95em; margin-top:2px;">${floor}</span>
+            const stats2Html = `<div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>.---<span class="action">FLOOR</span>---.</span><span style="font-size:0.95em; margin-top:2px;">${floor}</span>
                 <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>+===<span class="LV">LV</span>===+</span><span style="font-size:0.95em; margin-top:2px;">${player.level}</span>
                 <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>+===<span class="EXP">EXP</span>===+</span><span style="font-size:0.95em; margin-top:2px;">${player.exp}/${player.level * 10}</span>
                 <div style="text-align:center; display:flex; flex-direction:column; align-items:center; line-height:1;"><span>+===<span class="BTC">BTC</span>===+</span><span style="font-size:0.95em; margin-top:2px;">${player.bitcoins}</span>
+                <span center>._ _ _ _ _ _.</span>
             `;
             document.getElementById('stats2').innerHTML = stats2Html;    
 
@@ -1947,9 +1965,17 @@ __\\_______^/
                 endOfPlayerTurn();
                 return;
             }
-            const dmg = Math.floor(Math.random() * playerWeapon.damage.randomMultiplier) + playerWeapon.damage.base;
+            let dmg = Math.floor(Math.random() * playerWeapon.damage.randomMultiplier) + playerWeapon.damage.base;
+            // Crit attacks based off LUK stat
+            const critChance = player.luck * 0.02; // +0.2% chance per point
+            let isCrit = Math.random() < critChance;
+            if (isCrit) {
+                dmg = Math.floor(dmg * 1.2);
+                updateBattleLog(`<span class="LUK">CRITICAL HIT!</span> You dealt <span class="action">${dmg} HP</span> to ${currentEnemy.name}`);
+            } else {
+                updateBattleLog(`You deal ${dmg} HP to ${currentEnemy.name}`);
+            }
             currentEnemy.hp -= dmg;
-            updateBattleLog(`You deal ${dmg} HP to ${currentEnemy.name}`);
             endOfPlayerTurn();
         }
 
@@ -3017,6 +3043,11 @@ You found a treasure chest! Do you want to open it?
                                 displayText: `SPD: ${player.speed ?? "?"}`,
                                 description: "Increases your movement speed. Each point allows you to move 5% faster.",
                             },
+                            {
+                                id: "luck",
+                                displayText: `LUK: ${player.luck ?? "?"}`,
+                                description: "Increases crit rates and BTC rewards from chests.",
+                            }
                         ];
                     },
                     select: (selectedOptionId) => {
