@@ -691,10 +691,10 @@
     <div id="loginBox">
       <h2 style="text-align: center;">TARDQUEST ONLINE</h2>
         <center><a>Server Channel:</a> <select class="channel-selector" id="channelSelect">
-            <option value="wss://vocapepper.com:9600">CH.0 "Genesis"</option>
-            <option value="wss://vocapepper.com:9601">CH.1 "Aetherion"</option>
-            <option value="wss://vocapepper.com:9602">CH.2 "Stormfrost"</option>
-            <option value="wss://vocapepper.com:9603">CH.3 "Emberfall"</option>
+            <option value="Genesis">CH.0 "Genesis"</option>
+            <option value="Aetherion">CH.1 "Aetherion"</option>
+            <option value="Stormfrost">CH.2 "Stormfrost"</option>
+            <option value="Emberfall">CH.3 "Emberfall"</option>
         </select></center>
       <center><input id="loginUsername" type="text" placeholder="Username"><input id="loginPassword" type="password" placeholder="Password"> <button id="loginButton">Login</button> <button id="registerButton">Register</button></center>     
       <div id="loginError" style="color:#f44;min-height:24px; text-align: center;"></div>
@@ -725,8 +725,9 @@ function requestBitcoinsFromServer() {
 
 // Only assign handlers inside this function!
 function connectToServer() {
-    const selectedChannel = document.getElementById('channelSelect').value;
-    mainServer = new WebSocket(selectedChannel);
+    // Always connect to the same server URL
+    const serverUrl = "wss://vocapepper.com:9600";
+    mainServer = new WebSocket(serverUrl);
 
     mainServer.onopen = function(event) {
         isSocketConnected = true;
@@ -774,7 +775,7 @@ function connectToServer() {
         }
 
             if (data.type === "server_full") {
-            document.getElementById('loginError').textContent = data.message || "Server is full. Please try another channel or try again later.";
+            document.getElementById('loginError').textContent = data.message || "Server is full. Please try again later.";
             blockGameUntilLogin();
             return;
         }
@@ -3381,61 +3382,64 @@ You found a treasure chest! Do you want to open it?
     }
 
     // ===== LOGIN/REGISTER LOGIC =====
-    function sendLoginOrRegister(isRegister) {
-        if (!isSocketConnected || mainServer.readyState !== WebSocket.OPEN) {
-            document.getElementById('loginError').textContent = 'Not connected to server. Please try again.';
-            return;
-        }
-
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value;
+    function setupLoginHandlers() {
+        const loginButton = document.getElementById('loginButton');
+        const registerButton = document.getElementById('registerButton');
+        const channelSelect = document.getElementById('channelSelect');
+        const loginUsername = document.getElementById('loginUsername');
+        const loginPassword = document.getElementById('loginPassword');
         
-        if (!username || !password) {
-            document.getElementById('loginError').textContent = 'Please enter both username and password.';
-            return;
-        }
+        // Clear fields on successful login/register
+        mainServer.addEventListener('message', function(event) {
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch {
+                return;
+            }
+            if ((data.type === 'login_result' || data.type === 'register_result') && data.success) {
+                loginUsername.value = '';
+                loginPassword.value = '';
+            }
+        });
+        
+        // Handle Enter key on login fields
+        loginUsername.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') loginButton.click();
+        });
+        loginPassword.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') loginButton.click();
+        });
 
-        try {
-            document.getElementById('loginError').textContent = '...';
-            const payload = isRegister ? 
-                {type: 'register', username, password} : 
-                {type: 'login', username, password};
-            mainServer.send(JSON.stringify(payload));
-        } catch (error) {
-            console.error('Error sending login/register request:', error);
-            document.getElementById('loginError').textContent = 'Error sending request. Please try again.';
-        }
+        loginButton.onclick = function() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const channelName = channelSelect.value || "Genesis";
+            mainServer.send(JSON.stringify({
+                type: "login",
+                username: username,
+                password: password,
+                channel: channelName
+            }));
+        };
+        registerButton.onclick = function() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const channelName = channelSelect.value || "Genesis";
+            mainServer.send(JSON.stringify({
+                type: "register",
+                username: username,
+                password: password,
+                channel: channelName
+            }));
+        };
     }
 
-    document.getElementById('loginButton').onclick = function() { 
-        playSFX('uiSelect');
-        sendLoginOrRegister(false); 
-        // Clear the input fields after attempting to log in
-        document.getElementById('loginUsername').value = '';
-        document.getElementById('loginPassword').value = '';
-    };
-
-    document.getElementById('registerButton').onclick = function() { 
-        playSFX('uiSelect');
-        sendLoginOrRegister(true); 
-        // Clear the input fields after attempting to register
-        document.getElementById('loginUsername').value = '';
-        document.getElementById('loginPassword').value = '';
-    };
-
-    document.getElementById('loginPassword').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            playSFX('uiSelect');
-            sendLoginOrRegister(false);
-            // Clear the input fields after pressing Enter
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-        }
-    });
-
-    document.getElementById('loginUsername').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') document.getElementById('loginPassword').focus();
-    });
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupLoginHandlers);
+    } else {
+        setupLoginHandlers();
+    }
 
     // ===== LOGOUT FUNCTION =====
     function logout() {
