@@ -708,6 +708,7 @@ let mainServer; // Declare mainServer without initializing it yet
 let lastPingTimestamp = 0;
 let pingInterval = null;
 let isSocketConnected = false;
+let sessionToken = null;
 
 // Utility functions for cookies
 function setCookie(name, value, days = 7) {
@@ -737,6 +738,55 @@ function connectToServer() {
         console.log("Connected to server.");
         updateChatLog("<span class='action'>Connected to server.</span>");
         startPing();
+
+        // ===== AUTO-LOGIN IF COOKIE EXISTS =====
+        if (sessionToken) {
+            hideLoginModal();
+            allowGameAfterLogin();
+            // Always disable input and hide game UI until validated
+            isLoggedIn = false;
+            player.inputDisabled = true;
+            document.getElementById('game').classList.add('hidden');
+            document.getElementById('menu').classList.add('hidden');
+
+            function handleValidationResponse(event) {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch {
+                    return;
+                }
+                // Accept either validate_session or login_result as a valid session response
+                if ((data.type === "validate_session" && data.success) || (data.type === "login_result" && data.success)) {
+                    // If login_result, update sessionToken if provided
+                    if (data.session_token) {
+                        sessionToken = data.session_token;
+                        setCookie('sessionToken', sessionToken);
+                    }
+                    allowGameAfterLogin();
+                    document.getElementById('game').classList.remove('hidden');
+                    document.getElementById('menu').classList.remove('hidden');
+                    document.getElementById('loginError').textContent = '';
+                    hideLoginModal();
+                    sendToServer({ type: "get_inventory" });
+                    sendToServer({ type: "get_bitcoins" });
+                    requestMapFromServer && requestMapFromServer();
+                } else if ((data.type === "validate_session" || data.type === "login_result") && !data.success) {
+                    sessionToken = null;
+                    deleteCookie('sessionToken');
+                    showLoginModal();
+                }
+                if (data.type === "validate_session" || data.type === "login_result") {
+                    mainServer.removeEventListener('message', handleValidationResponse);
+                }
+            }
+
+            mainServer.addEventListener('message', handleValidationResponse);
+            sendToServer({ type: "validate_session" });
+        } else {
+            blockGameUntilLogin();
+            showLoginModal();
+        }
     };
 
     mainServer.onclose = function(event) {
@@ -765,6 +815,11 @@ function connectToServer() {
             data = JSON.parse(event.data);
         } catch {
             console.log(event.data);
+            return;
+        }
+
+        if (data.type === "validate_session") {
+            // Already handled by handleValidationResponse, ignore here
             return;
         }
 
@@ -989,8 +1044,10 @@ function connectToServer() {
     };
 }
 
-// Initial connection
-connectToServer();
+document.addEventListener('DOMContentLoaded', function() {
+    sessionToken = getCookie('sessionToken') || null;
+    connectToServer();
+});
 
 function updatePingDisplay(ms) {
     const el = document.getElementById("pingDisplay");
@@ -1004,7 +1061,7 @@ function startPing() {
     pingInterval = setInterval(() => {
         if (mainServer.readyState === WebSocket.OPEN) {
             lastPingTimestamp = Date.now();
-            mainServer.send(JSON.stringify({type: "__ping__", session_token: sessionToken}));
+            sendToServer({type: "__ping__", session_token: sessionToken});
         }
     }, 5000);
 }
@@ -3347,7 +3404,6 @@ You found a treasure chest! Do you want to open it?
         });
 
     // ===== LOGIN MODAL =====
-    let sessionToken = getCookie('sessionToken');
     let isLoggedIn = false;
 
     function showLoginModal() {
@@ -3374,47 +3430,6 @@ You found a treasure chest! Do you want to open it?
       startPing(); // Start pinging after login
       sendToServer({ type: "request_stats" });
       requestItemData(); // Request item data after login
-    }
-
-    // ===== AUTO-LOGIN IF COOKIE EXISTS =====
-    if (sessionToken) {
-      // Always disable input and hide game UI until validated
-      isLoggedIn = false;
-      player.inputDisabled = true;
-      document.getElementById('game').classList.add('hidden');
-      document.getElementById('menu').classList.add('hidden');
-      // Try to validate the session token with the server
-      function handleValidationResponse(event) {
-        let data;
-        try {
-          data = JSON.parse(event.data);
-        } catch {
-          return;
-        }
-        if (data.type === "validate_session") {
-          if (data.success) {
-            allowGameAfterLogin();
-            document.getElementById('game').classList.remove('hidden');
-          } else {
-            sessionToken = null;
-            deleteCookie('sessionToken');
-            showLoginModal();
-          }
-          mainServer.removeEventListener('message', handleValidationResponse);
-        }
-      }
-      function tryValidate() {
-        if (mainServer && mainServer.readyState === WebSocket.OPEN) {
-          mainServer.addEventListener('message', handleValidationResponse);
-          mainServer.send(JSON.stringify({ type: "validate_session", session_token: sessionToken }));
-        } else {
-          setTimeout(tryValidate, 100);
-        }
-      }
-      tryValidate();
-    } else {
-      blockGameUntilLogin();
-      showLoginModal();
     }
 
     // ===== LOGIN/REGISTER LOGIC =====
@@ -3451,23 +3466,23 @@ You found a treasure chest! Do you want to open it?
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             const channelName = channelSelect.value || "Genesis";
-            mainServer.send(JSON.stringify({
+            sendToServer({
                 type: "login",
                 username: username,
                 password: password,
                 channel: channelName
-            }));
+            });
         };
         registerButton.onclick = function() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             const channelName = channelSelect.value || "Genesis";
-            mainServer.send(JSON.stringify({
+            sendToServer({
                 type: "register",
                 username: username,
                 password: password,
                 channel: channelName
-            }));
+            });
         };
     }
 
@@ -3480,7 +3495,7 @@ You found a treasure chest! Do you want to open it?
     // ===== LOGOUT FUNCTION =====
     function logout() {
       if (sessionToken) {
-        mainServer.send(JSON.stringify({type: 'logout', session_token: sessionToken}));
+        sendToServer({type: 'logout', session_token: sessionToken});
       }
       sessionToken = null;
       isLoggedIn = false;
@@ -3490,15 +3505,18 @@ You found a treasure chest! Do you want to open it?
 
     // ===== WRAPPER FOR SENDING JSON WITH SESSION TOKEN =====
     function sendToServer(obj) {
-        if (!isLoggedIn || !sessionToken) {
-            // Block sending if not logged in
+        // Allow login, register, and validate_session even if not logged in
+        const allowedTypes = ["login", "register", "validate_session"];
+        if ((!isLoggedIn || !sessionToken) && !allowedTypes.includes(obj.type)) {
             return;
         }
         if (typeof obj === 'object' && obj !== null) {
-            obj.session_token = sessionToken;
+            if (sessionToken && obj.type !== "login" && obj.type !== "register") {
+                obj.session_token = sessionToken;
+            }
             // Check if the object is a command
-            if (obj.type === "chat" && obj.message.startsWith("/")) {
-                obj.type = "command"; // Change type to command if it's a command message
+            if (obj.type === "chat" && obj.message && obj.message.startsWith("/")) {
+                obj.type = "command";
             }
             mainServer.send(JSON.stringify(obj));
         }
