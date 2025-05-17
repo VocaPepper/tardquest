@@ -30,6 +30,7 @@ As this is in very early development stages there may be critical bugs during ga
 - ~~C4 can destroy exits~~ <sup>Fixed</sup>
 - ~~Rarely the {"type":"seen_tiles","seenTiles"} message from client-to-server gets broadcasted in the battle log~~ <sup>Fixed</sup>
 - ~~Touch Controls may not work as intended on Multiplayer client~~ <sup>Fixed</sup>
+- Party members are immortal
 
 # [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
 
