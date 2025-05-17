@@ -2306,6 +2306,9 @@ __\\_______^/
                 case 's':
                     requestLevelUp("speed");
                     break;
+                case 'l':
+                    requestLevelUp("luck");
+                    break;    
                 default:
                     return;
             }
@@ -3128,6 +3131,10 @@ You found a treasure chest! Do you want to open it?
                                 requestLevelUp("speed");
                                 updateBattleLog("You may be retarded, but your legs sure aren't! +5% SPD");
                                 break;
+                            case "luck":
+                                requestLevelUp("luck");
+                                updateBattleLog("You feel lucky, punk. +1 LUK");
+                                break;    
                         }
                         // Do not mutate player stats locally; wait for update_stats from server
                         menu.close();
