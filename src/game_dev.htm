@@ -463,9 +463,9 @@
         }
         #loginModal button {
             font-family: monospace;
-            background: #fff;
-            color: #000;
-            border: 2px solid #000;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
             padding: 10px;
             font-size: 16px;
             border-radius: 0px;
@@ -477,9 +477,9 @@
             cursor: pointer;
         }
         #loginModal button:hover {
-            background: #000;
-            color: #fff;
-            border: 2px solid #fff;
+            background: #fff;
+            color: #000;
+            border: 4px solid #fff;
         }
         #loginBox {
             width: 480px;
@@ -709,6 +709,13 @@ let lastPingTimestamp = 0;
 let pingInterval = null;
 let isSocketConnected = false;
 let sessionToken = null;
+let originalLoginBoxHTML = "";
+document.addEventListener('DOMContentLoaded', function() {
+    // Save the original login box HTML for later restoration
+    originalLoginBoxHTML = document.getElementById('loginBox').innerHTML;
+    sessionToken = getCookie('sessionToken') || null;
+    connectToServer();
+});
 
 // Utility functions for cookies
 function setCookie(name, value, days = 7) {
@@ -768,8 +775,6 @@ function connectToServer() {
                     document.getElementById('menu').classList.remove('hidden');
                     document.getElementById('loginError').textContent = '';
                     hideLoginModal();
-                    sendToServer({ type: "get_inventory" });
-                    sendToServer({ type: "get_bitcoins" });
                     requestMapFromServer && requestMapFromServer();
                 } else if ((data.type === "validate_session" || data.type === "login_result") && !data.success) {
                     sessionToken = null;
@@ -839,12 +844,15 @@ function connectToServer() {
         }
 
         if (data.type === "update_stats") {
-            // Only update player.hp if not in combat, or if the new HP is less than the current (damage), or if explicitly healing
-            if (typeof data.stats.hp !== "undefined") {
+            // ALWAYS update HP from the server when gameOver is true (handling death)
+            if (gameOver && typeof data.stats.hp !== "undefined") {
+                player.hp = data.stats.hp;
+            }
+            // Otherwise only update HP if not in combat or if it's damage
+            else if (typeof data.stats.hp !== "undefined") {
                 if (!player.inCombat || data.stats.hp < player.hp || data.stats.hp > player.hp) {
                     player.hp = data.stats.hp;
                 }
-                // Otherwise, ignore HP update to prevent overwriting correct value
             }
             // Update all other stats as usual, but skip hp (already handled)
             for (const key in data.stats) {
@@ -853,7 +861,13 @@ function connectToServer() {
             if (typeof data.remainingPoints !== "undefined") {
                 player.remainingPoints = data.remainingPoints;
             }
-            // Do NOT open level up menu here; only open on explicit 'level_up' message from server
+            for (const key in data.stats) {
+                if (key !== "hp" || gameOver) player[key] = data.stats[key];
+                }
+                
+                if (typeof data.remainingPoints !== "undefined") {
+                    player.remainingPoints = data.remainingPoints;
+                }
             player.levelingUp = false;
             render();
             // If stat allocation menu is open, re-render it to reflect new stats
@@ -940,7 +954,6 @@ function connectToServer() {
                 requestMapFromServer(); // Request the map after login
                 // Show stat allocation menu ONLY on first account run
                 if (data.firstLogin) {
-                    sendToServer({ type: "request_stats" });
                     window._openStatAllocationMenu = true;
                 }
             } else {
@@ -948,10 +961,6 @@ function connectToServer() {
                 updateChatLog(`<span class='chat'>${data.message || 'Login/Register failed.'}</span>`); // Show login/register error in chatlog
                 sessionToken = null;
                 blockGameUntilLogin();
-            }
-            if (data.type === 'login_result' && data.success) {
-                sendToServer({ type: "get_inventory" });
-                sendToServer({ type: "get_bitcoins" });
             }
             return;
         }
@@ -1019,9 +1028,20 @@ function connectToServer() {
             items = data.items || {};
             weapons = data.weapons || {};
             armor = data.armor || {};
+            eventItems = data.event || {};
             render();
             return;
         }
+
+        if (data.type === "merchant_items") {
+            merchant.items = Array.isArray(data.items) ? data.items : [];
+            if (data.event) event = data.event;
+            // If the merchantItems menu is open, re-render it
+            if (menu.getActiveMenu && menu.getActiveMenu() && menu.getActiveMenu().title === "MERCHANT") {
+                menu.render();
+            }
+            return;
+        }        
 
         // Fallback: log unknown message
         if (data.message) {
@@ -1094,7 +1114,9 @@ function updateInventoryUI() {
     } else {
         html += '<ul style="margin:0 0 0 10px;padding:0;list-style:none;">';
         for (const key of itemNames) {
-            html += `<li>${items[key]?.name || key}: <span style='color:#FAEB4A'>${inv[key]}</span></li>`;
+            // Check both items and eventItems for the item name
+            const itemName = items[key]?.name || eventItems[key]?.name || key;
+            html += `<li>${itemName}: <span style='color:#FAEB4A'>${inv[key]}</span></li>`;
         }
         html += '</ul>';
     }
@@ -1143,13 +1165,26 @@ function updateInventoryUI() {
                 updateBattleLog('HOLY SHIT! The <span class="friendly">merchant</span> has been <span class="action">vaporized</span> into a bloody red mist!');
             },
             buy: function(type, key) {
-                const merchandise = (type === 'item' ? items : (type === 'weapon' ? weapons : armor))?.[key];
+            const merchandise = (
+                type === 'item' ? items :
+                type === 'weapon' ? weapons :
+                type === 'armor' ? armor :
+                type === 'event' ? eventItems :
+                undefined
+            )?.[key];
                 if (!merchandise) {
-                    console.error(`${itemKey} doesn't exist!`);
+                    console.error(`${key} doesn't exist!`);
                     return;
                 }
 
-                sendToServer({ type: "buy_item", itemId: key, price: merchandise.price });
+                sendToServer({ type: "buy_item", item: key, price: merchandise.price });
+                if (typeof player.bitcoins === "number") {
+                    player.bitcoins -= merchandise.price;
+                    if (player.bitcoins < 0) player.bitcoins = 0;
+                    updateInventoryUI();
+                    render();
+                }
+                sendToServer({ type: "get_bitcoins" });
 
                 const purchaseFlavorText = [
                     "HAHA! You won't regret it!",
@@ -1191,84 +1226,72 @@ function updateInventoryUI() {
                 name: "SNAIL SENTINEL",
                 hp: 10,
                 attack: [1, 4],
-                bitcoins: 4,
             },
             {
                 id: "stupidDog",
                 name: "STUPID DOG",
                 hp: 6,
                 attack: [2, 5],
-                bitcoins: 3,
             },
             {
                 id: "wangRat",
                 name: "WANG RAT",
                 hp: 5,
                 attack: [3, 5],
-                bitcoins: 2,
             },
             {
                 id: "keeperOfTheToiletBowl",
                 name: "KEEPER OF THE TOILET BOWL",
                 hp: 15,
                 attack: [3, 7],
-                bitcoins: 5,
             },
             {
                 id: "mysteriousScooter",
                 name: "MYSTERIOUS SCOOTER",
                 hp: 12,
                 attack: [3, 6],
-                bitcoins: 4,
             },
             {
                 id: "badassFlamingSkeleton",
                 name: "BADASS FLAMING SKELETON",
                 hp: 13,
                 attack: [4, 9],
-                bitcoins: 4,
             },
             {
                 id: "fridgeOfForgottenLeftovers",
                 name: "FRIDGE OF FORGOTTEN LEFTOVERS",
                 hp: 20,
                 attack: [2, 3],
-                bitcoins: 3,
             },
             {
                 id: "lughead",
                 name: "LUGHEAD",
                 hp: 18,
                 attack: [2, 6],
-                bitcoins: 4,
             },
             {
                 id: "pissedOffPoultry",
                 name: "PISSED-OFF POULTRY",
                 hp: 7,
                 attack: [2, 5],
-                bitcoins: 2,
             },
             {
                 id: "krampusElf",
                 name: "KRAMPUS ELF",
                 hp: 7,
                 attack: [3, 4],
-                bitcoins: 4,
             },
             {
                 id: "mimic",
                 name: "MIMIC",
                 hp: 120,
                 attack: [7, 14],
-                bitcoins: 100,
             },
             {
-                id: "serverAdmin",
-                name: "SERVER ADMIN",
-                hp: 99,
-                attack: [1, 2],
-                bitcoins: 100,
+                id: "armedRhombus",
+                name: "ARMED RHOMBUS",
+                hp: 240,
+                attack: [14, 28],
             },
         ];
         const defeatMessages = [
@@ -1286,6 +1309,7 @@ function updateInventoryUI() {
         let items = {};
         let weapons = {};
         let armor = {};
+        let eventItems = {};
 
         const sfx = {
             footstep: new Audio('https://files.catbox.moe/o0ka4u.wav'),
@@ -1494,14 +1518,6 @@ function updateInventoryUI() {
             document.getElementById('minimap').innerHTML = out;
         }
 
-        function isMerchantTile(x, y) {
-            return merchant.isActiveOnFloor && x === merchant.x && y === merchant.y;
-        }
-
-        function isGamblerTile(x, y) {
-            return gambler.isActiveOnFloor && player.bitcoins >= gambler.playPrice && x === gambler.x && y === gambler.y;
-        }
-
         function updateBattleLog(entry) {
             battleLog.push(entry);
             if (battleLog.length > 50) {
@@ -1646,24 +1662,24 @@ __\\_______^/
 |(00)|
  )vv(
 `;
-                case "serverAdmin":
+                case "armedRhombus":
                     return `
-                                        /\\
-                                      / |  \\
-                                    /   |   \\                                                       
-                                    \\   |   /                                    
-                                    \\   |   /                                                                                                               
-                        (o)          \\  |  /                                                         
-                       ((o))         \\  |  /                                                         
-                      (o(o)o)        \\  |  /                                                         
-                     ((o(o)o))        \\ | /                                                          
-                    (o(o(o)o)o)      -X-|-X-                                                  
-                   ((o(o(o)o)o))--------|                                                                   
-                    (o(o(o)o)o)         X                                                           
-                     ((o(o)o))                                                                     
-                      (o(o)o)                                                                      
-                       ((o))                                                                     
-                        (o)                                                                                                                       
+                                   /\\
+                                 / |  \\
+                               /   |   \\                                                       
+                               \\   |   /                                    
+                               \\   |   /                                                                                                               
+                    (o)         \\  |  /                                                         
+                   ((o))        \\  |  /                                                         
+       x          (o(o)o)       \\  |  /                                                         
+      x x        ((o(o)o))       x=|=x                                                          
+     x x x------(o(o(o)o)o)--------|                                                  
+     x x x-----((o(o(o)o)o))-------|                                                                   
+      x x       (o(o(o)o)o)        X                                                           
+       x         ((o(o)o))                                                                     
+                  (o(o)o)                                                                      
+                   ((o))                                                                     
+                    (o)                                                                                                                       
 `;
                 case "keeperOfTheToiletBowl":
                     return `
@@ -1878,17 +1894,64 @@ __\\_______^/
                     "↑/W:      Move Forward\n↓/S:      Move Backward\n←/A, →/D: Turn\nT:        Talk\nI:        Inventory";
             }
 
-            if (player.hp <= 0) {
-                output += `\nGood job! <span class="action">You died</span> on <span class="action">floor ${floor}</span>`;
-                gameOver = true;
-                // Notify the server that the player is being revived/refilled
-                sendToServer({ type: "use_item", itemId: "healingTile" });
-                setTimeout(() => window.location.href = "../index.html", 5000);
+            if (player.hp <= 0 && !gameOver) {
+                gameOver = true;               
+                document.getElementById('loginModal').style.display = 'flex';
+                document.getElementById('loginBox').innerHTML = `
+                <h2 style="text-align: center;"><span class="action">YOU FUCKING DIED</span></h2>
+                <h3 style="text-align: center;">Good job! You died on <span class="friendly">floor ${floor}</span></h3><center><button id="respawnButton" style="margin-bottom: 500px;">Rebirth</button></center></div>
+                `;
+
+                document.getElementById('respawnButton').onclick = function() {
+                    document.getElementById('loginModal').style.display = 'none';
+                    document.getElementById('loginBox').innerHTML = originalLoginBoxHTML;
+                    respawn();
+                    render();
+                };   
             }
 
             document.getElementById('game').innerHTML = output;
         }
 
+        function respawn() {
+            sendToServer({ type: "player_died", keepStats: true });
+                    // Reset game state
+                    gameOver = false;
+                    floor = 1;
+                    player.hp = 1; // Prevent death loop temporarily
+                    player.x = 1;  // Reset player position
+                    player.y = 1;
+                    player.dir = 0; // Reset player direction
+                    player.inCombat = false; // Ensure player is not in combat
+                    currentEnemy = null; // Clear current enemy
+                    
+                    // Reset party members
+                    party = party.filter(member => member.hp > 0); // Only keep alive party members
+                    
+                    // Reset merchant/gambler state for new floor
+                    merchant.isActiveOnFloor = false;
+                    gambler.isActiveOnFloor = false;
+                    
+                    // Reset seen tiles for the new floor
+                    for (let y = 0; y < HEIGHT; y++) {
+                        for (let x = 0; x < WIDTH; x++) {
+                            seenTiles[y][x] = false;
+                        }
+                    }                   
+                    
+                    updateBattleLog(`<span class="action">You died, and have been transported back to your mother's womb.</span>`);
+                    updateBattleLog(`<span class="friendly">Your floor and level have been reset, but feel oddly powerful...</span>`);
+                    
+                    // Reset music to exploration theme
+                    playMusic('exploration');
+                    
+                    // Request new map for floor 1
+                    requestMapFromServer();
+                    
+                    // Update other UI elements
+                    drawMinimap();
+                    sendPlayerPosition();
+        }
 
         function isEmpty(obj) {
             for (let i in obj) {
@@ -1979,12 +2042,12 @@ __\\_______^/
         }
 
         function startEncounter() {
-            const randomEnemies = enemies.filter(enemy => enemy.id !== "mimic", "serverAdmin");
-            const serverAdmin = enemies.find(enemy => enemy.id === "serverAdmin");
-            const serverAdminSpawnChance = 0.005 / (floor + 0.005); // Increase chance with each floor
+            const randomEnemies = enemies.filter(enemy => enemy.id !== "mimic", "armedRhombus");
+            const armedRhombus = enemies.find(enemy => enemy.id === "armedRhombus");
+            const armedRhombusSpawnChance = 0.005 / (floor + 0.005); // Increase chance with each floor
             
-            if (serverAdmin && Math.random() < serverAdminSpawnChance) {
-                currentEnemy = structuredClone(serverAdmin);
+            if (armedRhombus && Math.random() < armedRhombusSpawnChance) {
+                currentEnemy = structuredClone(armedRhombus);
             } else {
                 currentEnemy = structuredClone(
                     randomEnemies[Math.floor(Math.random() * randomEnemies.length)]
@@ -2107,7 +2170,6 @@ __\\_______^/
                 // Notify server of player damage
                 sendToServer({ type: "player_damaged", hp: player.hp });
 
-                if (player.hp <= 0) gameOver = true;
             }
         }
 
@@ -2274,10 +2336,6 @@ __\\_______^/
             } else {
                 sendToServer({ type: "use_item", itemId: itemName });
             }
-        }
-
-        function buyItem(itemName, price) {
-            sendToServer({ type: "buy_item", itemId: itemName, price: price });
         }
 
         function addBitcoins(amount) {
@@ -2745,8 +2803,9 @@ __\\_______^/
                     getOptions: () => {
                         const options = Object.keys(player.inventory).map((itemId) => ({
                             id: itemId,
-                            displayText: items[itemId]?.name || itemId,
-                            description: items[itemId]?.desc || '',
+                            displayText: items[itemId]?.name || eventItems[itemId]?.name || itemId,
+                            description: items[itemId]?.desc || items[itemId]?.description || 
+                                        eventItems[itemId]?.desc || eventItems[itemId]?.description || '',
                             trailText: `${player.inventory[itemId]}`,
                         }));
 
@@ -2810,22 +2869,33 @@ __\\_______^/
                 },
                 merchantItems: {
                     title: "MERCHANT",
+                    onOpen: () => {
+                        sendToServer({ type: "get_merchant_items" });
+                    },
                     landingHtml: () => {
                         return player.bitcoins > 0
                             ? `You have <span class="BTC">${player.bitcoins} BTC</span> in your wallet`
                             : "Your wallet is emptier than a lughead's skull. But you can still look around";
                     },
                     getOptions: () => {
-                        // Defensive: fallback if merchant.items is undefined or not an array
-                        const itemList = Array.isArray(merchant.items) ? merchant.items : Object.keys(items);
-                        const options = itemList.map((itemId) => ({
-                            id: itemId,
-                            displayText: items[itemId]?.name || itemId,
-                            description: items[itemId]?.desc || '',
-                            trailText: `${items[itemId]?.price ?? '?'} BTC`,
-                            disabled: (items[itemId]?.price ?? 99999) > player.bitcoins,
-                            className: (items[itemId]?.price ?? 99999) > player.bitcoins ? 'tooExpensive' : undefined,
-                        }));
+                        const itemList = Array.isArray(merchant.items) ? merchant.items : [];
+                        const options = itemList.map((item) => {
+                            // Determine type: if item.id exists in event, it's an event, else item
+                            const isEvent = !!eventItems[item.id];
+                            const price = (typeof item.price !== "undefined") ? item.price : (isEvent ? eventItems[item.id]?.price : items[item.id]?.price ?? '?');
+                            const desc = isEvent
+                                ? (eventItems[item.id] && (eventItems[item.id].desc || eventItems[item.id].description) || '')
+                                : (items[item.id]?.desc ?? items[item.id]?.description ?? item.desc ?? '');
+                            return {
+                                id: item.id,
+                                type: isEvent ? 'event' : 'item',
+                                displayText: item.name || item.id,
+                                description: desc,
+                                trailText: `${price} BTC`,
+                                disabled: price > player.bitcoins,
+                                className: price > player.bitcoins ? 'tooExpensive' : undefined,
+                            };
+                        });
 
                         if (options.length === 0) {
                             options.push({
@@ -2846,7 +2916,10 @@ __\\_______^/
                     },
                     select: (selectedOptionId) => {
                         if (selectedOptionId !== "_noitems" && selectedOptionId !== "_exit") {
-                            merchant.buy('item', selectedOptionId);
+                            // Find the selected option to get its type
+                            const selectedOption = menu.getActiveMenu().getOptions().find(opt => opt.id === selectedOptionId);
+                            const type = selectedOption?.type || 'item';
+                            merchant.buy(type, selectedOptionId);
                         }
                     },
                 },
@@ -3418,7 +3491,9 @@ You found a treasure chest! Do you want to open it?
     let isLoggedIn = false;
 
     function showLoginModal() {
-      loginModal.style.display = 'flex';
+        document.getElementById('loginBox').innerHTML = originalLoginBoxHTML;
+        loginModal.style.display = 'flex';
+        setupLoginHandlers(); // Re-attach login/register button handlers
     }
     function hideLoginModal() {
       loginModal.style.display = 'none';
@@ -3438,9 +3513,8 @@ You found a treasure chest! Do you want to open it?
       isLoggedIn = true;
       player.inputDisabled = false; // Enable player input
       hideLoginModal();
-      startPing(); // Start pinging after login
-      sendToServer({ type: "request_stats" });
-      requestItemData(); // Request item data after login
+      startPing();
+      requestPlayerData();
     }
 
     // ===== LOGIN/REGISTER LOGIC =====
@@ -3503,15 +3577,68 @@ You found a treasure chest! Do you want to open it?
         setupLoginHandlers();
     }
 
-    // ===== LOGOUT FUNCTION =====
     function logout() {
-      if (sessionToken) {
-        sendToServer({type: 'logout', session_token: sessionToken});
-      }
-      sessionToken = null;
-      isLoggedIn = false;
-      deleteCookie('sessionToken'); // <-- Clear cookie
-      blockGameUntilLogin();
+        if (sessionToken) {
+            sendToServer({type: 'logout', session_token: sessionToken});
+        }
+        sessionToken = null;
+        isLoggedIn = false;
+        deleteCookie('sessionToken'); // <-- Clear cookie
+
+        // ===== RESET GAME STATE =====
+        // Reset player and game variables
+        gameOver = false;
+        floor = 1;
+        player.x = 1;
+        player.y = 1;
+        player.dir = 0;
+        player.inCombat = false;
+        player.inputDisabled = true;
+        player.inventory = {};
+        player.weapon = 'pointyStick';
+        player.armor = 'graphicTee';
+        player.hp = 1;
+        player.maxHp = 20;
+        player.defense = 0;
+        player.persuasion = 0;
+        player.speed = 0;
+        player.luck = 0;
+        player.exp = 0;
+        player.level = 1;
+        player.bitcoins = 0;
+        player.levelingUp = false;
+        party = [];
+        currentEnemy = null;
+        MAP = [];
+        seenTiles = Array.from({ length: HEIGHT }, () => Array(WIDTH).fill(false));
+        merchant.isActiveOnFloor = false;
+        gambler.isActiveOnFloor = false;
+        battleLog = [];
+        chatLog = [];
+        updateBattleLog('');
+        updateChatLog('');
+
+        // Stop all music and sound
+        if (music.current) {
+            music.current.pause();
+            music.current.currentTime = 0;
+            music.current = null;
+        }
+        Object.values(sfx).forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+
+        // Hide game UI, show login modal
+        blockGameUntilLogin();
+        document.getElementById('game').classList.add('hidden');
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('partylist').innerHTML = '';
+        document.getElementById('stats1').innerHTML = '';
+        document.getElementById('stats2').innerHTML = '';
+        document.getElementById('controls').innerHTML = '';
+        document.getElementById('battleLog').innerHTML = '';
+        document.getElementById('minimap').innerHTML = '';
     }
 
     // ===== WRAPPER FOR SENDING JSON WITH SESSION TOKEN =====
@@ -3570,8 +3697,11 @@ function sendSeenTiles() {
     });
 
     // Request item data from server
-    function requestItemData() {
+    function requestPlayerData() {
         sendToServer({ type: "get_item_data" });
+        sendToServer({ type: "get_inventory" });
+        sendToServer({ type: "get_bitcoins" });
+        sendToServer({ type: "request_stats" });
     }
 </script>
 </body></html>
