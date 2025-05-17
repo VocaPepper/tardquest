@@ -20,12 +20,17 @@
 As this is in very early development stages there may be critical bugs during gameplay.
 
 ### Known bugs
-- Items may not display in the Merchant menu
+- ~~Items may not display in the Merchant menu~~ <sup>Fixed</sup>
 - Gambler will spawn regardless of BTC owned
-- Maps may not generate correctly (adjusting map logic as I go)
-- ~~C4 only targets upper left of map~~ <sup>Fixed</sup>
+- Maps may not generate correctly <sup>May not be an issue now?</sup>
 - ~~Treasure Chest rewards are not distributed to player~~ <sup>Fixed</sup>
-- Touch Controls may not work as intended on Multiplayer client
+- C4 does not behave as intended
+- ~~C4 only targets upper left of map~~ <sup>Fixed</sup>
+- ~~C4 tends to stop working after single-use by any player~~ <sup>Fixed</sup>
+- ~~C4 can destroy exits~~ <sup>Fixed</sup>
+- ~~Rarely the {"type":"seen_tiles","seenTiles"} message from client-to-server gets broadcasted in the battle log~~ <sup>Fixed</sup>
+- ~~Touch Controls may not work as intended on Multiplayer client~~ <sup>Fixed</sup>
+- Party members are immortal
 
 # [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
 
