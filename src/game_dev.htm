@@ -3392,16 +3392,27 @@ You found a treasure chest! Do you want to open it?
     let touchEnabled = false;
 
     document.getElementById('touchMode').addEventListener('click', () => {
-            touchEnabled = !touchEnabled;
-            const btn = document.getElementById('touchMode');
-            btn.textContent = touchEnabled ? "DISABLE TOUCH MODE" : "ENABLE TOUCH MODE";
-            if (!touchEnabled) {
-                closeControl('mobile-controls');
+        touchEnabled = !touchEnabled;
+        const btn = document.getElementById('touchMode');
+        btn.textContent = touchEnabled ? "DISABLE TOUCH MODE" : "ENABLE TOUCH MODE";
+        if (!touchEnabled) {
+            closeControl('mobile-controls');
+            if (menu.isOpen()) {
+                const activeMenu = menu.getActiveMenu();
+                if (activeMenu) {
+                    closeControl(menu.breadcrumbs.at(-1).menuName + '-controls');
+                }
             }
-            else {
-                openControl('mobile-controls');
+        } else {
+            openControl('mobile-controls');
+            if (menu.isOpen()) {
+                const activeMenu = menu.getActiveMenu();
+                if (activeMenu) {
+                    openControl(menu.breadcrumbs.at(-1).menuName + '-controls');
+                }
             }
-        });
+        }
+    });
 
     // ===== LOGIN MODAL =====
     let isLoggedIn = false;
