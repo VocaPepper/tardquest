@@ -353,6 +353,61 @@
         .action {
             color: #EC4134;
         }
+        /* Touch Controls */
+        .button {
+            font-family: monospace;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 0px;
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            touch-action: manipulation;
+        }
+        #touch-mode {
+            height: 285px;
+            width: 672px;
+            position: absolute;
+            border: 2px solid #fff;
+            top: 641px;
+            padding: 10px;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow: visible;
+            justify-content: space-between;
+            touch-action: manipulation;
+        }
+        #menu-controls {
+            height: 285px;
+            width: 570px;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            padding: 10px;
+        }
+        #bottomMenu {
+            height: 19px;
+            width: 570px;
+            position: absolute;
+            font-family:monospace;
+            top: 600px;
+            left: 28px;
+            padding: 10px;
+            color: #fff;
+            border: 2px solid #fff;
+            font-size: 16px;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow: visible;
+            justify-content: space-between;
+            text-align: left;
+            touch-action: manipulation;
+        }
   </style>
 </head>
 <body>
@@ -391,6 +446,30 @@
         <input type="text" id="persuadeInput" placeholder="Say your piece...">
       </div>
     </div>
+    <!-- Start Touch Mode Patches-->
+    <div id="bottomMenu"><a href="#" id="touchMode">ENABLE TOUCH MODE</a></div>
+    <div id="touch-mode" style="visibility: hidden;">
+            <button class="button" onclick="move('forward'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>            
+            <button class="button" onclick="turnLeft(); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="turnRight(); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+        <button class="button" onclick="move('backward'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+        <button class="button" onclick="tryPersuade(); render();" style="position:absolute; top: 50px; left:200px; width: 125px;">Persuade</button>
+        <button class="button" onclick="openControl('menu-controls'); menu.open('inventory')" style="position:absolute; top: 125px; left:200px; width: 125px;">Inventory</button>
+        <button class="button" onclick="playerAttack(); render();" style="position:absolute; top: 200px; left:200px; width: 125px;">Attack</button>
+        <button class="button" onclick="tryRun(); render();" style="position:absolute; top: 50px; left:350px; width: 125px;">Run</button>
+        <button class="button" onclick="menu.handleInput('escape'); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Back</button>
+        <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        <div id="menu-controls" style="visibility: hidden;">
+            <button class="button" onclick="menu.handleInput('arrowup'); render();" style="position:absolute; top: 75px; left:75px;">↑</button>
+            <button class="button" onclick="menu.handleInput('arrowleft'); render();" style="position:absolute; top: 125px; left:25px;">←</button>
+            <button class="button" onclick="menu.handleInput('arrowright'); render();" style="position:absolute; top: 125px; left:125px;">→</button>
+            <button class="button" onclick="menu.handleInput('arrowdown'); render();" style="position:absolute; top: 175px; left:75px;">↓</button>
+            <button class="button" onclick="menu.handleInput('escape'); render();" style="position:absolute; top: 125px; left:350px; width: 125px;">Back</button>
+            <button class="button" onclick="menu.handleInput('enter'); render();" style="position:absolute; top: 200px; left:350px; width: 125px;">Confirm</button>
+        </div>
+    </div>
+    <!-- End Patches-->
   </div>
 
     <script>
@@ -2367,6 +2446,11 @@ __\\_______^/
                 document.getElementById('menu').classList.remove('hidden');
                 document.getElementById('menuSelectionDescription').textContent = '';
 
+                // Call openControl() when the menu is opened
+                if (document.getElementById('touch-mode').style.visibility === 'visible') {
+                openControl('menu-controls');
+                }
+
                 activeMenu.onOpen?.();
                 menu.render();
             },
@@ -2375,6 +2459,11 @@ __\\_______^/
                 menu.menus[previousMenu.menuName].onClose?.();
                 menu.selectionIndex = previousMenu.selectionIndex;
                 menu.currentPage = previousMenu.currentPage;
+
+                // Call closeControl() when the menu is closed
+                if (document.getElementById('touch-mode').style.visibility === 'visible') {
+                closeControl('menu-controls');
+                }
 
                 if (menu.breadcrumbs.length === 0) {
                     document.getElementById('menu').classList.add('hidden');
@@ -2385,6 +2474,11 @@ __\\_______^/
                 while (menu.breadcrumbs.length > 0) {
                     const previousMenu = menu.breadcrumbs.pop();
                     menu.menus[previousMenu.menuName].onClose?.();
+
+                    // Call closeControl() when the menu is closed
+                    if (document.getElementById('touch-mode').style.visibility === 'visible') {
+                    closeControl('menu-controls');
+                    }
                 }
                 document.getElementById('menu').classList.add('hidden');
                 document.getElementById('game').classList.remove('hidden');
@@ -3294,6 +3388,45 @@ You found a treasure chest! Do you want to open it?
         ['█▀▀▀ ', '▀▀▀▄ ', '▀▄▄▀ '], // 5
         ['▄▀▀▀ ', '█▀▀▄ ', '▀▄▄▀ '], // 6
     ];
+
+    // Touch Controls
+    function openControl(getID)
+    {
+        const element = document.getElementById(getID);
+        if (!element) return;
+        element.style.visibility = "visible";
+    }
+    function closeControl(getID)
+    {
+        const element = document.getElementById(getID);
+        if (!element) return;
+        element.style.visibility = "hidden";
+    }
+
+    let touchEnabled = false;
+
+    document.getElementById('touchMode').addEventListener('click', () => {
+        touchEnabled = !touchEnabled;
+        const btn = document.getElementById('touchMode');
+        btn.textContent = touchEnabled ? "DISABLE TOUCH MODE" : "ENABLE TOUCH MODE";
+        if (!touchEnabled) {
+            closeControl('touch-mode');
+            if (menu.isOpen()) {
+                const activeMenu = menu.getActiveMenu();
+                if (activeMenu) {
+                    closeControl('menu-controls');
+                }
+            }
+        } else {
+            openControl('touch-mode');
+            if (menu.isOpen()) {
+                const activeMenu = menu.getActiveMenu();
+                if (activeMenu) {
+                    openControl('menu-controls');
+                }
+            }
+        }
+    });
     </script>
 
 
