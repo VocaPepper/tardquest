@@ -1,7 +1,37 @@
 # TardQuest
+```
+    ▄▄▄▄▀ ██   █▄▄▄▄ ██▄   ▄▄ █    ▄   ▄███▄     ▄▄▄▄▄      ▄▄▄▄▀
+▀▀▀ █    █ █  █  ▄▀ █  █ █   █     █  █▀   ▀   █     ▀▄ ▀▀▀ █
+    █    █▄▄█ █▀▀▌  █   █ ▀▀▀█  █   █ ██▄▄   ▄  ▀▀▀▀▄       █
+   █     █  █ █  █  █  █     █  █   █ █▄   ▄▀ ▀▄▄▄▄▀       █
+  ▀         █   █   ███▀      █ █▄ ▄█ ▀███▀               ▀
+           █   ▀        _______▀ ▀▀▀
+          ▀            |       |
+                       |_______|=)
+                      -----------         ^    /\__/\
+         ___   |_|    |         |    O____|    |@  @|
+        /   \_/@ @    \_________/   /|    |    |(00)|
+      __\_______^/       |   |       |    |     )vv(
+                         |___|      / \   |
+```
 
-[Placeholder - VocaPepper]
+# The multiplayer update is here.
+### Chat, co-op, and more!
+As this is in very early development stages there may be critical bugs during gameplay.
 
+### Known bugs
+- The party system is absolute shit
+- Party battles are broken lol
+- Party members that disconnected still show in the party list
+- Duplicate messages in battleLog and chatLot
+- General syncing issues when clients disconnect (man i love networking)
+
+# [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
+
+# Notes
+Client and server code will be available after it is fully playable. The source available here is just the base game with the touch mode added.
+
+###
 A Javascript game by [Xx_TheMilkMan69_xX](https://forum.agoraroad.com/index.php?members/8701/) and [MySpace Tom](https://forum.agoraroad.com/index.php?members/3460/)
 
 # Objective
@@ -29,15 +59,12 @@ Good job, idiot. You have fallen into a dungeon and have no way out except to ge
 | P | Persuade |
 | I | Open Inventory |
 
+### Touchscreen
+| Key | Action |
+| --- | ------ |
+| Tap | TOUCH MODE |
+
 #### About Persuasion
 During battle, you can try to persuade an enemy to join you in your quest. To persuade them, you can say whatever you want. Unfortunately, the enemies don't speak your language, so your words don't actually have any influence on their decision to join you or not, but they might be swayed by your attempts.
 
 After an enemy has been successfully persuaded to join you in your quest, they will become an ally. Allies will help you in battle and will fight for you to the bitter death. During a given battle, an ally may use one of their turns to heal your character up to one time per fight maximum.
-
-# Notable Forks
-### VocaPepper
-VocaPepper's build most notably includes touch controls for touchscreen devices, as well as an online multiplayer mode.
-
-▶[Main](https://vocapepper.com/tardquest/)
-
-▶[GitHub](https://github.com/VocaPepper/tardquest)
