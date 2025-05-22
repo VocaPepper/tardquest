@@ -15,24 +15,22 @@
                          |___|      / \   |
 ```
 
-# The multiplayer update is here.
-### Chat, co-op, and more!
-As this is in very early development stages there may be critical bugs during gameplay.
+# The co-op multiplayer update is here.  [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
+This is in very early development stages and will have critical bugs during gameplay. Server will be up and down a lot.
 
 ### Known bugs
-- The party system is absolute shit
-- Party battles are broken lol
-- Party members that disconnected still show in the party list
-- Duplicate messages in battleLog and chatLot
-- General syncing issues when clients disconnect (man i love networking)
-
-# [►►► PLAY ONLINE ◄◄◄](https://vocapepper.com/tardquest)
+- The Party system is absolute shit from a butt.
+- Party battles are broken <sup>see above lol</sup>
+- Party members that disconnected still show in the Party list
+- Duplicate messages in battleLog and chatLot (this one is weird trust me bro)
+- General syncing issues with clients when other clients disconnect (man i love networking)
 
 # Notes
 Client and server code will be available after it is fully playable. The source available here is just the base game with the touch mode added.
 
-###
+# Credits
 A Javascript game by [Xx_TheMilkMan69_xX](https://forum.agoraroad.com/index.php?members/8701/) and [MySpace Tom](https://forum.agoraroad.com/index.php?members/3460/)
+<sup>Well, the online version is now a Javascript client for a Python game. Crazy how that happened.</sup>
 
 # Objective
 Fight your way to the end of the dungeon!
