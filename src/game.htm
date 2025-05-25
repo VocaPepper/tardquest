@@ -1929,7 +1929,7 @@ __\\_______^/
             let dmg = Math.floor(Math.random() * playerWeapon.damage.randomMultiplier) + playerWeapon.damage.base;
 
             // Crit attacks based off LUK stat
-            const critChance = player.luck * 0.02; // +0.2% chance per point
+            const critChance = player.luck * 0.01; // +0.1% chance per point
             let isCrit = Math.random() < critChance;
             if (isCrit) {
                 dmg = Math.floor(dmg * 1.2);
@@ -2061,6 +2061,15 @@ __\\_______^/
         document.getElementById("persuadeInput").addEventListener("keydown", e => {
             if (e.key === "Enter") {
                 const message = e.target.value;
+                // ======== CHEAT COMMANDS ========
+                if (message.startsWith("/")) {
+                    handleCheatCommand(message);
+                    e.target.value = "";
+                    awaitingPersuasionText = false;
+                    document.getElementById("inputBox").style.display = "none";
+                    render();
+                    return;
+                }
                 updateBattleLog(`YOU: "${message}"`);
                 e.target.value = "";
                 awaitingPersuasionText = false;
@@ -2130,6 +2139,179 @@ __\\_______^/
             render();
         }
 
+        function handleCheatCommand(cmd) {
+            if (cmd === "/spawn merchant") {
+                let found = false;
+                for (let i = 0; i < 4; i++) {
+                    const nx = player.x + DX[i];
+                    const ny = player.y + DY[i];
+                    if (coordsInBounds(nx, ny) && MAP[ny][nx] === '.') {
+                        merchant.isAlive = true;
+                        merchant.isActiveOnFloor = true;
+                        merchant.x = nx;
+                        merchant.y = ny;
+                        updateBattleLog('<span class="merchant">CHEAT: Merchant spawned</span>');
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    updateBattleLog('<span class="merchant">CHEAT: Merchant not spawned. Try a different spot.</span>');
+                }
+                return;
+            }
+            if (cmd === "/spawn gambler") {
+                let found = false;
+                for (let i = 0; i < 4; i++) {
+                    const nx = player.x + DX[i];
+                    const ny = player.y + DY[i];
+                    if (coordsInBounds(nx, ny) && MAP[ny][nx] === '.') {
+                        gambler.isAlive = true;
+                        gambler.isActiveOnFloor = true;
+                        gambler.x = nx;
+                        gambler.y = ny;
+                        updateBattleLog('<span class="gambler">CHEAT: Gambler spawned</span>');
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    updateBattleLog('<span class="gambler">CHEAT: Gambler not spawned. Try a different spot.</span>');
+                }
+                return;
+            }
+            if (cmd.startsWith("/givebtc ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount > 0) {
+                    player.bitcoins += amount;
+                    updateBattleLog(`<span class="BTC">CHEAT: Added ${amount} BTC to your worn out Kamen Rider wallet</span>`);
+                } else {
+                    updateBattleLog(`<span class="action">Invalid BTC amount.</span>`);
+                }
+                return;
+            }
+            if (cmd.startsWith("/sethp ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount > 0) {
+                    player.maxHp = amount;
+                    player.hp = amount;
+                    updateBattleLog(`<span class="HP">CHEAT: Max HP set to ${amount}</span>`);
+                } else {
+                    updateBattleLog(`<span class="action">Invalid HP amount.</span>`);
+                }
+                return;
+            }
+            if (cmd.startsWith("/setdef ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount >= 0) {
+                    player.defense = amount;
+                    updateBattleLog(`<span class="DEF">CHEAT: Defense set to ${amount}</span>`);
+                } else {
+                    updateBattleLog(`<span class="action">Invalid DEF amount.</span>`);
+                }
+                return;
+            }
+            if (cmd.startsWith("/setprs ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount >= 0) {
+                    player.persuasion = amount;
+                    updateBattleLog(`<span class="PRS">CHEAT: Persuasion set to ${amount}</span>`);
+                } else {
+                    updateBattleLog(`<span class="action">Invalid PRS amount.</span>`);
+                }
+                return;
+            }
+            if (cmd.startsWith("/setspd ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount >= 0) {
+                    player.speed = amount;
+                    updateBattleLog(`<span class="SPD">CHEAT: Speed set to ${amount}</span>`);
+                } else {
+                    updateBattleLog(`<span class="action">Invalid SPD amount.</span>`);
+                }
+                return;
+            }
+            if (cmd.startsWith("/setluk ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount >= 0) {
+                    player.luck = amount;
+                    updateBattleLog(`<span class="LUK">CHEAT: Luck set to ${amount}</span>`);
+                } else {
+                    updateBattleLog(`<span class="action">Invalid LUK amount.</span>`);
+                }
+                return;
+            }
+            if (cmd === "/debug") {
+                player.maxHp = 69999;
+                player.hp = 69999;
+                player.defense = 69999;
+                player.persuasion = 69999;
+                player.speed = 69999;
+                player.luck = 69999;
+                player.bitcoins = 69999;
+
+                let merchantSpawned = false;
+                let merchantPos = null;
+                for (let i = 0; i < 4; i++) {
+                    const nx = player.x + DX[i];
+                    const ny = player.y + DY[i];
+                    if (coordsInBounds(nx, ny) && MAP[ny][nx] === '.') {
+                        merchant.isAlive = true;
+                        merchant.isActiveOnFloor = true;
+                        merchant.x = nx;
+                        merchant.y = ny;
+                        merchantSpawned = true;
+                        merchantPos = { x: nx, y: ny };
+                        break;
+                    }
+                }
+
+                let gamblerSpawned = false;
+                if (merchantSpawned) {
+                    for (let i = 0; i < 4; i++) {
+                        const gx = merchant.x + DX[i];
+                        const gy = merchant.y + DY[i];
+                        const notPlayer = gx !== player.x || gy !== player.y;
+                        const notMerchant = gx !== merchant.x || gy !== merchant.y;
+                        if (
+                            coordsInBounds(gx, gy) &&
+                            MAP[gy][gx] === '.' &&
+                            notPlayer &&
+                            notMerchant
+                        ) {
+                            gambler.isAlive = true;
+                            gambler.isActiveOnFloor = true;
+                            gambler.x = gx;
+                            gambler.y = gy;
+                            gamblerSpawned = true;
+                            break;
+                        }
+                    }
+                }
+                updateBattleLog(
+                    `<span class="action">CHEAT: Debug mode activated! All stats and BTC set to 69999. Merchant${merchantSpawned ? "" : " (FAILED)"} and Gambler${gamblerSpawned ? "" : " (FAILED)"} spawned next to you.</span>`
+                );
+                render();
+                return;
+            }
+
+    
+            if (cmd.startsWith("/setfloor ")) {
+                const amount = parseInt(cmd.split(" ")[1], 10);
+                if (!isNaN(amount) && amount > 0) {
+                    floor = amount;
+                    updateBattleLog(`<span class="action">CHEAT: Moved to Floor ${amount}</span>`);
+                    generateMap();
+                    render();
+                } else {
+                    updateBattleLog(`<span class="action">Try an actual floor number, retard.</span>`);
+                }
+                return;
+            }
+
+            updateBattleLog(`<span class="action">RETARD ALERT! INVALID CHEAT: ${cmd}</span>`);
+        }
+
         function getArticle(noun) {
             if (noun.match(/^\w*s\b|\barmor$/i)) {
                 return '';
@@ -2144,10 +2326,24 @@ __\\_______^/
 
             document.getElementById('menu').classList.add('hidden');
 
-            dice = [
-                Math.floor(Math.random() * 6) + 1,
-                Math.floor(Math.random() * 6) + 1,
-            ];
+            // LUK affects chance to roll a 12
+            // Base chance to roll a 12 is 1/36 (~2.78%)
+            let luckBonus = player.luck * 0.03; // +3% chance to roll a 12
+            let roll12 = Math.random() < (1/36 + luckBonus);
+
+            let dice;
+            if (roll12) {
+                dice = [6, 6];
+            } else {
+                // Roll normally, but avoid double sixes
+                do {
+                    dice = [
+                        Math.floor(Math.random() * 6) + 1,
+                        Math.floor(Math.random() * 6) + 1,
+                    ];
+                } while (dice[0] === 6 && dice[1] === 6);
+            }
+
             gambleAnimation(dice, () => {
                 gambleOutcome(dice);
             });
@@ -2162,7 +2358,7 @@ __\\_______^/
             let html = 'You rolled a ' +
                 `<span class="gambler">${dice[0]}</span> and a ` +
                 `<span class="gambler">${dice[1]}</span> ` +
-                `for a sum of <span class="${sumClass}">${sum}</span>\n\n`;
+                `for a sum of <span class="${sumClass}">${sum}</span>\n`;
 
             if (win) {
                 const stats = ['hp', 'defense', 'persuasion'];
@@ -2170,27 +2366,30 @@ __\\_______^/
 
                 switch (randomStat) {
                     case 'hp':
-                        // Get a bonus of either 5 or 10 HP
-                        const healthBoost = 5 + (Math.floor((Math.random() * 2)) * 5)
+                        const healthBoost = 5 + (Math.floor((Math.random() * 2)) * 5);
                         player.hp += healthBoost;
                         player.maxHp += healthBoost;
-                        updateBattleLog(`<span class="LV">You scored a health boost! +${healthBoost} HP!</span>`);
+                        html += `<span class="LV">You scored a health boost! +${healthBoost} HP!</span>`;
                         break;
                     case 'defense':
-                        // Get a bonus of either 1 or 2 defense
                         const defenseBoost = 1 + Math.floor((Math.random() * 2));
                         player.defense += defenseBoost;
-                        updateBattleLog(`<span class="LV">You won a defense boost! +${defenseBoost} DEF!</span>`);
+                        html += `<span class="LV">You won a defense boost! +${defenseBoost} DEF!</span>`;
                         break;
                     case 'persuasion':
-                        // Get a bonus of either 1 or 2 persuasion
                         const persuasionBoost = 1 + Math.floor((Math.random() * 2));
                         player.persuasion += persuasionBoost;
-                        updateBattleLog(`<span class="LV">You won a persuasion boost! +${persuasionBoost} PRS!</span> (Actually the gambler just handed you a beat-up copy of "How to Win Friends and Influence People", but whatever)`);
+                        html += `<span class="LV">You won a persuasion boost! +${persuasionBoost} PRS!</span> (Actually the gambler just handed you a beat-up copy of "How to Win Friends and Influence People", but whatever)`;
                         break;
                 }
+                gambler.isActiveOnFloor = false;
+                updateBattleLog(html);
+                updateBattleLog('The gambler escapes into the shadows');
             } else {
-                gambler.say('Hah! Tough luck, kid!');
+                gambler.say('<span class="gambler">Hah! Tough luck, kid!</span> You gotta know when to hold \'em, know when to fold \'em, heh heh');
+                gambler.isActiveOnFloor = false;
+                updateBattleLog(html);
+                updateBattleLog('The gambler escapes into the shadows');
             }
 
             menu.close();
@@ -2914,9 +3113,6 @@ __\\_______^/
                         gambler.say('Place yer bets!');
                     },
                     onClose: () => {
-                        gambler.say('You gotta know when to hold \'em, know when to fold \'em, heh heh');
-                        updateBattleLog('The gambler escapes into the shadows');
-
                         gambler.isActiveOnFloor = false;
                     },
                     landingHtml: () => {
@@ -3289,11 +3485,11 @@ You found a treasure chest! Do you want to open it?
 
                       ..__
             __________\`.  '-
-           (___________ \`.  '
-                (__________
-                 (________
-                   (____          _
-                        \`-______-'
+           (___________ \`.  '-.
+            (__________
+             (________
+               (____          _
+                    \`-______-'
        .-----       .----.
       / \`.   \`.    /      \\
      /    '.___\`. /________\\
@@ -3307,10 +3503,22 @@ You found a treasure chest! Do you want to open it?
                           ..__
                 __________\`.  '-
                (___________ \`.  '-.
-                (__________
-                 (________
-                   (____
-                        \`-______-
+                (___/_/\\ ___.
+                 (__\\_\\/|   ||
+                   (____|___||    _
+                        \`-______-'
+
+    `,
+
+    `
+
+                  ..__
+        __________\`.  '-
+       (___________ \`.  '-.
+        (__________
+         (________
+           (____
+                \`-______-
 
 
     .----------.   .----------.
@@ -3379,7 +3587,6 @@ You found a treasure chest! Do you want to open it?
     `,
 
 ];
-
     const dieDigit = [
         ['▗▄▋  ', ' ▐▋  ', '▝▀▀▘ '], // 1
         ['▄▀▀▄ ', ' ▄▀  ', '▀▀▀▀▘'], // 2
