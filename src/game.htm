@@ -2868,12 +2868,15 @@ __\\_______^/
                 menu.menus[previousMenu.menuName].onClose?.();
                 menu.selectionIndex = previousMenu.selectionIndex;
                 menu.currentPage = previousMenu.currentPage;
-
-                // Call closeControl() when the menu is closed
-                if (document.getElementById('touch-mode').style.visibility === 'visible') {
-                closeControl('menu-controls');
+            
+                // Only call closeControl() if all menus are closed
+                if (
+                    document.getElementById('touch-mode').style.visibility === 'visible' &&
+                    menu.breadcrumbs.length === 0
+                ) {
+                    closeControl('menu-controls');
                 }
-
+            
                 if (menu.breadcrumbs.length === 0) {
                     document.getElementById('menu').classList.add('hidden');
                     document.getElementById('game').classList.remove('hidden');
