@@ -1,7 +1,7 @@
 window.ENEMY_ART = {
     snailSentinel: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 5,
+        offsetY: 0,
         data: `                                                                            
     ▄                                                                                
   ▄▀ ▀▄                                                                              
@@ -38,8 +38,8 @@ window.ENEMY_ART = {
         `,
     },
     stupidDog: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 30,
+        offsetY: 0,
         data: `
   ▄▄▄▄▄▄▄▄▄▄▄                             ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                           
 ▄█▀  ▄▄▄▄▄▄ ▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▀              ▀█                          
@@ -73,8 +73,8 @@ window.ENEMY_ART = {
         `,
     },
     keeperOfTheToiletBowl: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 10,
+        offsetY: 0,
         data: `
                                                  ▄▀                                  
                                                ▄▀ ▀▄▀                                
@@ -117,8 +117,8 @@ window.ENEMY_ART = {
         `,
     },
     mysteriousScooter: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 35,
+        offsetY: 0,
         data: `
          ▄▄▄▄▄                                            
     ▄▄▄▄▀▒▒▒▒▒▀▀▄                                         
@@ -171,8 +171,8 @@ window.ENEMY_ART = {
         `,
     },
     badassFlamingSkeleton: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 20,
+        offsetY: 0,
         data: `
 
    ▒▒                            ▒▒                                       
@@ -225,8 +225,8 @@ window.ENEMY_ART = {
         `,
     },
     wangRat: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 20,
+        offsetY: 0,
         data: `
     ▄▄▄▄▄▄▄               ▄▄▄▄▄▄▄▄▄▄▄                                                
 ▄▀▀▀       ▀▀▄  ▄▄▄▄▄▄▄▄▄█           ▀▄                                              
@@ -270,8 +270,8 @@ window.ENEMY_ART = {
         `,
     },
     fridgeOfForgottenLeftovers: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 0,
+        offsetY: 0,
         data: `
                 ▄▄▄▄▄▄▄▄▄▄▄▄▄                            
      ▄▄▄▄▄▄▄▄▄▄▄▀          █░▀█                          
@@ -310,8 +310,8 @@ window.ENEMY_ART = {
         `,
     },
     lughead: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 0,
+        offsetY: 0,
         data: `
                          ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                         
                      ▄▄▄▄▀                      ▀▀▄                       
@@ -362,8 +362,8 @@ window.ENEMY_ART = {
         `,
     },
     pissedOffPoultry: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 0,
+        offsetY: 0,
         data: `
                       ▄▄   ▄▀▄                          
                     ▄ █ ▀▄▄▀ ▀▄                         
@@ -417,8 +417,8 @@ window.ENEMY_ART = {
         `,
     },
     krampusElf: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 0,
+        offsetY: 0,
         data: `
                                               ▄                                   
                                             ▄▀▀▄                                  
@@ -473,8 +473,8 @@ window.ENEMY_ART = {
         `,
     },
     mimic: {
-        isEnemyArt: true,
-        drawAt: { x: 0, y: 0 },
+        offsetX: 0,
+        offsetY: 0,
         data: `
         ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                             
     ▄▀▀▀                     ▀▀▀▀▀▀▄                       

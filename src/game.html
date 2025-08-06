@@ -6742,10 +6742,21 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
                     console.error("Could not find enemy art entry", { enemyId });
                     return null;
                 }
-
-                // Use formatArt to handle spaceBoundaryCharacter, but skip grid placement
-                const art = sceneRenderer.formatArt(indexedArt);
-
+            
+                let art = sceneRenderer.formatArt(indexedArt);
+            
+                // Apply horizontal offset if specified
+                if (indexedArt.offsetX) {
+                    art = art
+                        .split('\n')
+                        .map(line => ' '.repeat(indexedArt.offsetX) + line)
+                        .join('\n');
+                }
+                // Apply vertical offset if specified
+                if (indexedArt.offsetY) {
+                    art = '\n'.repeat(indexedArt.offsetY) + art;
+                }
+            
                 return `<div class="layer enemy">
                     <pre>${art}</pre>
                 </div>`;
