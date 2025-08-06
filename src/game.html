@@ -327,9 +327,9 @@
 
         #game .layer,
         #game span {
-            display: inline-block !important;
-            font-size: 12px !important;
-            line-height: 12px !important;
+            display: inline-block;
+            font-size: 12px;
+            line-height: 12px;
         }
 
         #animTorch {
@@ -1156,6 +1156,26 @@
         .player.lets-go {
             display: inline-block;
             animation: letsGo .8s linear infinite;
+        }
+
+        .layer.enemy {
+            position: absolute !important;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .layer.enemy pre {
+            margin: 0;
+            line-height: 1;
+            display: inline-block;
+            white-space: pre;
+            font-size: 12px;
+            transform: scale(0.5);
+            transform-origin: center center;
+            color: #fff;
         }
     </style>
 </head>
@@ -6698,8 +6718,16 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
                 // Trim any whitespace from the template literal
                 const formattedArt = art.data.replace(/^ *\n|\n *$/g, '');
                 const lines = formattedArt.split("\n");
-                const shortestLeadingWhitespace = Math.min(...lines.map((line) => line.match(/^ +/)[0].length));
-                const trimmedArt = lines.map((line) => line.substr(shortestLeadingWhitespace)).join("\n");
+                // Safely handle lines with no leading spaces
+                const shortestLeadingWhitespace = Math.min(
+                    ...lines
+                        .filter(line => line.trim().length > 0)
+                        .map(line => {
+                            const match = line.match(/^ +/);
+                            return match ? match[0].length : 0;
+                        })
+                );
+                const trimmedArt = lines.map(line => line.substr(shortestLeadingWhitespace)).join("\n");
 
                 return (
                     typeof art.spaceBoundaryCharacter !== 'undefined'
@@ -6715,31 +6743,12 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
                     return null;
                 }
 
+                // Use formatArt to handle spaceBoundaryCharacter, but skip grid placement
                 const art = sceneRenderer.formatArt(indexedArt);
-                let xPosition = indexedArt.drawAt.x;
-                let yPosition = indexedArt.drawAt.y;
 
-                let enemyLayer = Array.from({ length: sceneRenderer.displayHeight }, () =>
-                    Array.from({ length: sceneRenderer.displayWidth }, () => ' ')
-                );
-
-                for (character of art) {
-                    if (character === "\n") {
-                        xPosition = indexedArt.drawAt.x;
-                        yPosition++;
-                        continue;
-                    }
-
-                    // Draw only if in bounds
-                    if (typeof enemyLayer[yPosition]?.[xPosition] !== 'undefined') {
-                        enemyLayer[yPosition][xPosition] = `<span>${character}</span>`;
-                    }
-
-                    xPosition++;
-                }
-
-                const joinedArt = enemyLayer.map(row => row.join('')).join('\n');
-                return `<div class="layer enemy">${joinedArt}</div>`;
+                return `<div class="layer enemy">
+                    <pre>${art}</pre>
+                </div>`;
             },
 
             drawHealingLayer: () => '<div class="layer healing"></div>',
