@@ -8752,9 +8752,9 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
         }
 
         function updateSeenTiles() {
-             // Default reveal radius 1, 2 if Ring of Sightliness equipped
-            const radius = player.hasEquippedRing('ringOfSightliness') ? 2 : 1;
-            MAP.revealSpot(player.x, player.y, radius);
+            player.hasEquippedRing('ringOfSightliness')
+                ? MAP.revealFOV(player.x, player.y, 2)
+                : MAP.revealSpot(player.x, player.y, 1);
         }
 
         function updateBattleLog(entry) {
@@ -10211,6 +10211,8 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
                         id: "inventoryEquipment",
                         displayText: "Equipment",
                         description: "View and change your equipped weapon and armor.",
+                        className: player.inCombat ? "tooExpensive" : undefined,
+                        disabled: player.inCombat,
                     },
                     {
                         id: "_back",
@@ -10219,6 +10221,11 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
                     }
                 ],
                 select: (selectedOptionId) => {
+                    // When in battle, disable equipment submenu(s)
+                    if (selectedOptionId === "inventoryEquipment" && player.inCombat) {
+                        updateBattleLog("Your foe's deathly stare prevents you from wanting to strip down into a new set of equipment!");
+                        return;
+                    }
                     menu.open(selectedOptionId);
                 },
                 onOpen: () => {
