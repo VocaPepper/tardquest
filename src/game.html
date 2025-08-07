@@ -9854,11 +9854,18 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
             playRandomBattleMusic(); // <-- use this
         }
 
+        let playerAttackCooldown = false;
 
         function playerAttack() {
-            if (!player.inCombat || GameControl.awaitingPersuasionText) {
+            if (
+                !player.inCombat ||
+                GameControl.awaitingPersuasionText ||
+                playerAttackCooldown
+            ) {
                 return;
             }
+
+            playerAttackCooldown = true; // VOCAP: Prevent spamming attacks, such as holding down the attack key.
 
             playSFX('attack');
             animateEnemyDamaged();
@@ -9889,7 +9896,8 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
             // VOCAP: leave time for attack animation. very crude, but it works?
             setTimeout(() => {
                 endOfPlayerTurn();
-            }, 336); // VOCAP: 2x the attack animation duration, makes it feel more fluid
+                playerAttackCooldown = false;
+            }, 420); // VOCAP: blaze it lmao
         }
 
         function endOfPlayerTurn() {
