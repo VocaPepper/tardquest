@@ -1431,6 +1431,35 @@
             80%  { transform: translate(4px,0) skewX(8deg) rotate(3deg); }
             100% { transform: translate(0,0) skewX(0deg) rotate(0deg); }
         }
+
+        @keyframes PlayerDamaged {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 0); }
+            40% { transform: translate(6px, 0); }
+            60% { transform: translate(-4px, 0); }
+            80% { transform: translate(4px, 0); }
+            100% { transform: translate(0, 0); }
+        }
+        
+        #interface.shake {
+            animation: PlayerDamaged 0.168s;
+        }
+
+        #animDamageTaken {
+            position: absolute;
+            width: 692px;
+            height: 611px;
+            padding: -4px;
+            background: rgba(255,0,0,0.33) !important;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 69420;
+            transition: opacity 0.168s;
+        }
+        #animDamageTaken.active {
+            opacity: 1;
+            animation: PlayerDamaged 0.168s;
+        }
     </style>
 </head>
 <body>
@@ -1519,6 +1548,7 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
 
 <!-- In-game -->
     <div id="interface">
+        <div id="animDamageTaken"></div>
         <div id="battleLog"></div>
         <div id="topLeft">
             <div id="minimapContainer">
@@ -7511,6 +7541,7 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
                 player.hp = Math.max(player.hp - hp, 0);
                 player.refreshStats();
                 player.checkForDeath();
+                animPlayerDamaged();
             },
             setHp: (hp) => {
                 player.hp = hp;
@@ -10007,6 +10038,20 @@ A Javascript game by <a href="https://milklounge.wang/tardquest/" target="_blank
             if ($enemyLayer) {
                 $enemyLayer.classList.add('damaged');
                 setTimeout(() => $enemyLayer.classList.remove('damaged'), 168); // VOCAP: match the attack animation duration
+            }
+        }
+
+        function animPlayerDamaged() {
+            const $interface = document.getElementById('interface');
+            if ($interface) {
+                $interface.classList.add('shake');
+                setTimeout(() => $interface.classList.remove('shake'), 168); // VOCAP: match the damage animation duration
+            }
+
+            const $flash = document.getElementById('animDamageTaken');
+            if ($flash) {
+                $flash.classList.add('active');
+                setTimeout(() => $flash.classList.remove('active'), 168); // VOCAP: match the damage animation duration
             }
         }
 
